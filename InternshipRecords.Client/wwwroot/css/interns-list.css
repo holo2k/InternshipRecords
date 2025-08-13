@@ -1,0 +1,36 @@
+﻿/* --- Секция фильтров --- */
+.filter-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.filter-section input {
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-section button {
+    flex-shrink: 0;
+}
+
+/* --- Список стажеров --- */
+.interns-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+/* --- Карточка стажера --- */
+.intern-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+.intern-card:hover {
+    transform: translateY(-3px);
+}

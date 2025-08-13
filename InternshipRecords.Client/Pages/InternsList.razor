@@ -1,0 +1,64 @@
+﻿@page "/interns"
+@using InternshipRecords.Client.Services
+@inject InternService InternService
+@inject ChatService ChatService
+
+<div class="card">
+    <h3>Список стажеров</h3>
+
+    <div class="filter-section">
+        <input placeholder="Фильтр по проекту" @bind="filterProject" class="form-control" />
+        <input placeholder="Фильтр по направлению" @bind="filterDepartment" class="form-control" />
+        <button class="btn" @onclick="ApplyFilter">Применить фильтр</button>
+    </div>
+
+    <div class="interns-list">
+        @foreach (var intern in filteredInterns)
+        {
+            <div class="intern-card">
+                <strong>@intern.FirstName @intern.LastName</strong>
+                <p>@intern.Department / @intern.Project</p>
+            </div>
+        }
+
+        @if (filteredInterns.Count == 0)
+        {
+            <p>Стажеры не найдены.</p>
+        }
+    </div>
+</div>
+
+@code {
+    private List<InternDto> interns = new();
+    private List<InternDto> filteredInterns = new();
+    private string filterProject = "";
+    private string filterDepartment = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Заглушки, если сервер недоступен
+        interns = await InternService.GetInternsAsync() ?? new List<InternDto>
+        {
+            new() { FirstName="Иван", LastName="Иванов", Department="Backend", Project="Project A" },
+            new() { FirstName="Мария", LastName="Петрова", Department="Frontend", Project="Project B" }
+        };
+        filteredInterns = new List<InternDto>(interns);
+
+        // Заглушка для SignalR: обновление списка при новом сообщении
+        ChatService.OnMessageReceived += (u, m) =>
+        {
+            // Здесь можно обновлять список стажеров при поступлении нового сообщения
+            StateHasChanged();
+        };
+
+        await ChatService.StartAsync();
+    }
+
+    private void ApplyFilter()
+    {
+        filteredInterns = interns.FindAll(i =>
+            (string.IsNullOrEmpty(filterProject) || i.Project.Contains(filterProject, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(filterDepartment) || i.Department.Contains(filterDepartment, StringComparison.OrdinalIgnoreCase))
+        );
+    }
+}

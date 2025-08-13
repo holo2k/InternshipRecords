@@ -1,0 +1,97 @@
+﻿/* --- Основной контейнер --- */
+.app-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    min-height: 100vh;
+}
+
+/* --- Шапка --- */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: linear-gradient(90deg, #4facfe 0%, #11a3aa 100%);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+
+/* --- Лого --- */
+.brand a {
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+    text-decoration: none;
+}
+
+/* --- Навигация --- */
+.app-nav {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-link {
+    color: #ffffff; /* белый для контраста с #1fa5be */
+    font-weight: bold; /* жирный текст */
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+    .nav-link:hover {
+        color: #1f56be; /* дополнительный эффект при наведении */
+        background-color: rgba(255,255,255,0.2);
+    }
+
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* --- Основной контент --- */
+.app-main {
+    padding: 2rem;
+}
+
+/* --- Карточки и секции --- */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* --- Кнопки --- */
+button {
+    background: #4facfe;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background: #00f2fe;
+}
+
+/* --- Инпуты --- */
+input, select {
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input:focus, select:focus {
+    border-color: #4facfe;
+    outline: none;
+    box-shadow: 0 0 4px rgba(79,172,254,0.5);
+}

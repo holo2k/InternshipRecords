@@ -1,0 +1,45 @@
+﻿/* --- Табуляция --- */
+.tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.tab-button {
+    color: grey;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    background: lightgray;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.tab-button:hover {
+    background: #d0d4e0;
+}
+
+.tab-button.active {
+    background: #4facfe;
+    color: white;
+    font-weight: 600;
+}
+
+/* --- Контент таба --- */
+.tab-content {
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    background: #fff;
+}
+
+/* --- Элементы списка --- */
+.list-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}

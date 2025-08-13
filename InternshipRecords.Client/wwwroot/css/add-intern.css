@@ -1,0 +1,45 @@
+﻿/* --- Группы полей формы --- */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+/* --- Блок добавления нового элемента --- */
+.add-item {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+    /* --- Кнопки в форме --- */
+    .add-item .btn,
+    button.btn {
+        background: #4facfe;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+        .add-item .btn:hover,
+        button.btn:hover {
+            background: #00f2fe;
+        }
+
+    /* --- Стили инпутов внутри .add-item --- */
+    .add-item input {
+        flex: 1; /* растягиваем инпут на доступное пространство */
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+
+/* --- Фокус инпутов --- */
+input:focus,
+select:focus {
+    border-color: #4facfe;
+    outline: none;
+    box-shadow: 0 0 4px rgba(79,172,254,0.5);
+}
