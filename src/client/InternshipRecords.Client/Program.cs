@@ -11,7 +11,6 @@ builder.Services.AddScoped(sp => new HttpClient
     BaseAddress = new Uri("http://localhost:5001/")
 });
 
-builder.Services.AddSingleton<ChatService>();
 builder.Services.AddSingleton<InternService>();
 builder.Services.AddSingleton<DepartmentService>();
 builder.Services.AddSingleton<ProjectService>();

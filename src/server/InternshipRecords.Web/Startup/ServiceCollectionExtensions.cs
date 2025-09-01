@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.OpenApi.Models;
 
-namespace InternshipRecords.Server.Startup;
+namespace InternshipRecords.Web.Startup;
 
 public static class ServiceCollectionExtensions
 {

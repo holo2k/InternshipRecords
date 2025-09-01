@@ -1,10 +1,10 @@
-namespace InternshipRecords.Server;
+namespace InternshipRecords.Web;
 
 public class Program
 {
     public static async Task Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder();
 
         Startup.Startup.ConfigureServices(builder.Services, builder.Configuration);
 

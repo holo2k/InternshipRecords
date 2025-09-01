@@ -1,7 +1,6 @@
 ﻿@page "/interns"
 @using InternshipRecords.Client.Services
 @inject InternService InternService
-@inject ChatService ChatService
 
 <div class="card">
     <h3>Список стажеров</h3>
@@ -43,15 +42,6 @@
             new() { FirstName="Мария", LastName="Петрова", Department="Frontend", Project="Project B" }
         };
         filteredInterns = new List<InternDto>(interns);
-
-        // Заглушка для SignalR: обновление списка при новом сообщении
-        ChatService.OnMessageReceived += (u, m) =>
-        {
-            // Здесь можно обновлять список стажеров при поступлении нового сообщения
-            StateHasChanged();
-        };
-
-        await ChatService.StartAsync();
     }
 
     private void ApplyFilter()

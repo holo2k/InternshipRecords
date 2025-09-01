@@ -1,9 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 using InternshipRecords.Infrastructure;
-using InternshipRecords.Server.Hubs;
 using Microsoft.AspNetCore.Mvc;
 
-namespace InternshipRecords.Server.Startup;
+namespace InternshipRecords.Web.Startup;
 
 public static class Startup
 {
@@ -51,11 +50,6 @@ public static class Startup
         app.AddExceptionHandler();
 
         app.UseRouting();
-
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapHub<ChatHub>("/chatHub"); // обязательно именно MapHub
-        });
 
         app.AddSwagger();
 

@@ -3,7 +3,7 @@ using InternshipRecords.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
-namespace InternshipRecords.Server.Startup;
+namespace InternshipRecords.Web.Startup;
 
 public static class WebAppExtensions
 {

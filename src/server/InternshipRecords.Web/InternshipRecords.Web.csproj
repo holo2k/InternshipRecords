@@ -23,4 +23,8 @@
     <ProjectReference Include="..\InternshipRecords.Infrastructure\InternshipRecords.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

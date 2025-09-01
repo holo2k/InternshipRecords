@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace InternshipRecords.Server.Controllers;
+namespace InternshipRecords.Web.Controllers;
 
 public class HomeController : ControllerBase
 {
