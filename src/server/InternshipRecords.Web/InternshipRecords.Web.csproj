@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\InternshipRecords.Application\InternshipRecords.Application.csproj" />
     <ProjectReference Include="..\InternshipRecords.Infrastructure\InternshipRecords.Infrastructure.csproj" />
   </ItemGroup>
 
