@@ -1,0 +1,8 @@
+﻿namespace InternshipRecords.Application.Features.Direction.AddDirection;
+
+public class AddDirectionRequest
+{
+    public string Name { get; set; } = null!;
+
+    public string Description { get; set; } = string.Empty;
+}
