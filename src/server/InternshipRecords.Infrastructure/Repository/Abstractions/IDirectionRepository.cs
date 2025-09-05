@@ -8,6 +8,7 @@ public interface IDirectionRepository
     Task<Guid> UpdateAsync(Direction direction);
     Task<Guid> DeleteAsync(Guid id);
     Task<Direction?> GetByIdAsync(Guid id);
-    Task<ICollection<Direction>> GetAll(params string[] queryParams);
-    Task AttachInterns(Guid directionId, Guid[] internIds);
+    Task<ICollection<Direction>> GetAllAsync(params string[] queryParams);
+    Task AttachInternsAsync(Guid directionId, Guid[] internIds);
+    Task SaveAsync();
 }

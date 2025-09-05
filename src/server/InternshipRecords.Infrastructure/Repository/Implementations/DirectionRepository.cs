@@ -29,11 +29,15 @@ public class DirectionRepository : IDirectionRepository
         if (existing == null)
             throw new KeyNotFoundException($"Direction with id {direction.Id} not found");
 
-        _appDbContext.Directions.Update(direction);
+        existing.Name = direction.Name;
+        existing.Description = direction.Description;
+        existing.UpdatedAt = direction.UpdatedAt;
+
         await _appDbContext.SaveChangesAsync();
 
         return existing.Id;
     }
+
 
     public async Task<Guid> DeleteAsync(Guid id)
     {
@@ -60,7 +64,7 @@ public class DirectionRepository : IDirectionRepository
             .FirstOrDefaultAsync(d => d.Id == id);
     }
 
-    public async Task<ICollection<Direction>> GetAll(params string[] queryParams)
+    public async Task<ICollection<Direction>> GetAllAsync(params string[] queryParams)
     {
         IQueryable<Direction> query = _appDbContext.Directions
             .Include(d => d.Interns);
@@ -74,7 +78,7 @@ public class DirectionRepository : IDirectionRepository
         return await query.ToListAsync();
     }
 
-    public async Task AttachInterns(Guid directionId, Guid[] internIds)
+    public async Task AttachInternsAsync(Guid directionId, Guid[] internIds)
     {
         var direction = await _appDbContext.Directions
             .Include(d => d.Interns)
@@ -94,5 +98,10 @@ public class DirectionRepository : IDirectionRepository
         }
 
         await _appDbContext.SaveChangesAsync();
+    }
+
+    public Task SaveAsync()
+    {
+        return _appDbContext.SaveChangesAsync();
     }
 }
