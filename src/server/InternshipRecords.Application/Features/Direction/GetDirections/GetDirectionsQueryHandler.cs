@@ -18,7 +18,6 @@ public class GetDirectionsQueryHandler : IRequestHandler<GetDirectionsQuery, ICo
     public async Task<ICollection<DirectionDto>> Handle(GetDirectionsQuery request, CancellationToken cancellationToken)
     {
         var directions = await _directionRepository.GetAllAsync(request.QueryParams);
-
         return _mapper.Map<ICollection<DirectionDto>>(directions);
     }
 }
