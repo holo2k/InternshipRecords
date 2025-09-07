@@ -12,11 +12,11 @@ public class Intern
     public string? Phone { get; set; }
     public DateTime BirthDate { get; set; }
 
-    public Guid DirectionId { get; set; }
-    public Direction Direction { get; set; } = null!;
+    public Guid? DirectionId { get; set; }
+    public Direction? Direction { get; set; } = null!;
 
-    public Guid ProjectId { get; set; }
-    public Project Project { get; set; } = null!;
+    public Guid? ProjectId { get; set; }
+    public Project? Project { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
