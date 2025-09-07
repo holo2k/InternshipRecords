@@ -29,6 +29,14 @@ public class InternRepository : IInternRepository
         if (existing == null)
             throw new KeyNotFoundException($"Intern with id {intern.Id} not found");
 
+        if (intern.DirectionId.HasValue &&
+            await _appDbContext.Directions.FindAsync(intern.DirectionId) == null)
+            throw new KeyNotFoundException($"Direction with id {intern.DirectionId} not found");
+
+        if (intern.ProjectId.HasValue &&
+            await _appDbContext.Directions.FindAsync(intern.ProjectId) == null)
+            throw new KeyNotFoundException($"Project with id {intern.ProjectId} not found");
+
         _appDbContext.Interns.Update(intern);
         await _appDbContext.SaveChangesAsync();
 

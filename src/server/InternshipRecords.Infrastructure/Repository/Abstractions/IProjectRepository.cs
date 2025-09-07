@@ -8,6 +8,7 @@ public interface IProjectRepository
     Task<Guid> UpdateAsync(Project project);
     Task<Guid> DeleteAsync(Guid id);
     Task<Project?> GetByIdAsync(Guid id);
-    Task<ICollection<Project>> GetAll(params string[] queryParams);
-    Task AttachInterns(Guid projectId, Guid[] internIds);
+    Task<ICollection<Project>> GetAllAsync(params string[] queryParams);
+    Task AttachInternsAsync(Guid projectId, Guid[] internIds);
+    Task SaveAsync();
 }

@@ -56,7 +56,7 @@ public class ProjectRepository : IProjectRepository
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public async Task<ICollection<Project>> GetAll(params string[] queryParams)
+    public async Task<ICollection<Project>> GetAllAsync(params string[] queryParams)
     {
         IQueryable<Project> query = _appDbContext.Projects
             .Include(d => d.Interns);
@@ -70,7 +70,7 @@ public class ProjectRepository : IProjectRepository
         return await query.ToListAsync();
     }
 
-    public async Task AttachInterns(Guid projectId, Guid[] internIds)
+    public async Task AttachInternsAsync(Guid projectId, Guid[] internIds)
     {
         var project = await _appDbContext.Projects
             .Include(p => p.Interns)
@@ -89,6 +89,11 @@ public class ProjectRepository : IProjectRepository
             intern.ProjectId = projectId;
         }
 
+        await _appDbContext.SaveChangesAsync();
+    }
+
+    public async Task SaveAsync()
+    {
         await _appDbContext.SaveChangesAsync();
     }
 }
