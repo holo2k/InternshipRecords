@@ -41,16 +41,7 @@ public static class Startup
 
         services.AddSignalR();
 
-        services.AddCors(options =>
-        {
-            options.AddPolicy("AllowClient", builder =>
-            {
-                builder.WithOrigins("http://localhost:5000") // порт клиента
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
-            });
-        });
+        services.AddCors();
     }
 
     public static async Task ConfigureAppAsync(WebApplication app)
