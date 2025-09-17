@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models.Direction;
 
 namespace InternshipRecords.Application.Features.Direction.GetDirections;
 
