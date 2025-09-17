@@ -1,0 +1,293 @@
+﻿@page "/directions-projects"
+@using InternshipRecords.Client.Services
+@using InternshipRecords.Client.Services.Intern
+@using Shared.Models
+@inject DirectionService DirectionService
+@inject ProjectService ProjectService
+@inject InternService InternService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<div class="card">
+    <h3>Направления и проекты</h3>
+
+    <div class="tabs">
+        <button class="tab-button @(activeTab == "departments" ? "active" : "")" @onclick="SwitchTabDepartments">
+            Направления
+        </button>
+        <button class="tab-button @(activeTab == "projects" ? "active" : "")" @onclick="SwitchTabProjects">
+            Проекты
+        </button>
+    </div>
+
+
+    <div class="search-sort">
+        <input placeholder="Поиск" @bind="searchTerm" @bind:event="oninput" class="form-control" />
+        <select class="form-control" @onchange="SortChanged">
+            <option value="name">Сортировать по названию</option>
+            <option value="count">Сортировать по количеству стажеров</option>
+        </select>
+    </div>
+
+    <div class="tab-content">
+        @if (activeTab == "directions")
+        {
+            <div class="add-item">
+                <input placeholder="Новое направление" @bind="newDirectionName" class="form-control" />
+                <button class="btn" @onclick="AddDirection">Добавить направление</button>
+            </div>
+
+            @if (FilteredDirections.Any())
+            {
+                <ul>
+                    @foreach (var direction in FilteredDirections)
+                    {
+                        <li class="list-item">
+                            <strong>@direction.Direction.Name</strong> (@direction.InternCount стажеров)
+                            <button class="btn btn-sm" @onclick="() => ToggleInterns(direction)">
+                                @(direction.ShowInterns ? "Скрыть" : "Показать") стажеров
+                            </button>
+                            <button class="btn btn-sm" @onclick="() => EditDirection(direction)">Редактировать</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteDirection(direction)">Удалить</button>
+
+                            @if (direction.ShowInterns && direction.Interns.Any())
+                            {
+                                <ul class="interns-sublist">
+                                    @foreach (var intern in direction.Interns)
+                                    {
+                                        <li>@intern.FirstName @intern.LastName</li>
+                                    }
+                                </ul>
+                            }
+                            else if (direction.ShowInterns)
+                            {
+                                <p>Нет стажеров в этом направлении</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>Направления не найдены</p>
+            }
+        }
+        else if (activeTab == "projects")
+        {
+            <div class="add-item">
+                <input placeholder="Новый проект" @bind="newProjectName" class="form-control" />
+                <button class="btn" @onclick="AddProject">Добавить проект</button>
+            </div>
+
+            @if (FilteredProjects.Any())
+            {
+                <ul>
+                    @foreach (var project in FilteredProjects)
+                    {
+                        <li class="list-item">
+                            <strong>@project.Project.Name</strong> (@project.InternCount стажеров)
+                            <button class="btn btn-sm" @onclick="() => ToggleInterns(project)">
+                                @(project.ShowInterns ? "Скрыть" : "Показать") стажеров
+                            </button>
+                            <button class="btn btn-sm" @onclick="() => EditProject(project)">Редактировать</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteProject(project)">Удалить</button>
+
+                            @if (project.ShowInterns && project.Interns.Any())
+                            {
+                                <ul class="interns-sublist">
+                                    @foreach (var intern in project.Interns)
+                                    {
+                                        <li>@intern.FirstName @intern.LastName</li>
+                                    }
+                                </ul>
+                            }
+                            else if (project.ShowInterns)
+                            {
+                                <p>Нет стажеров в этом проекте</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>Проекты не найдены</p>
+            }
+        }
+    </div>
+
+    <div class="pagination">
+        <button @onclick="PrevPage" disabled="@(currentPage <= 1)">Назад</button>
+        <span>Страница @currentPage</span>
+        <button @onclick="NextPage" disabled="@(!HasNextPage)">Вперед</button>
+        <select @bind="pageSize" class="form-control">
+            <option value="5">5 на странице</option>
+            <option value="10">10 на странице</option>
+            <option value="20">20 на странице</option>
+        </select>
+    </div>
+</div>
+
+@code {
+    private string activeTab = "directions";
+    private string searchTerm = "";
+    private string sortBy = "name";
+    private string newDirectionName = "";
+    private string newProjectName = "";
+
+    private int currentPage = 1;
+    private int pageSize = 5;
+
+    private List<DirectionDto> allDirections = new();
+    private List<ProjectDto> allProjects = new();
+    private List<InternDto> allInterns = new();
+
+    private List<DirectionViewModel> directionViewModels = new();
+    private List<ProjectViewModel> projectViewModels = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        string[] directionParams = sortBy == "name" ? new[] { "orderByName" } : new[] { "orderByCount" };
+        string[] projectParams = sortBy == "name" ? new[] { "orderByName" } : new[] { "orderByCount" };
+
+        var directionsTask = DirectionService.GetDirectionsAsync(directionParams);
+        var projectsTask = ProjectService.GetProjectsAsync(projectParams);
+        var internsTask = InternService.GetInternsAsync();
+
+        await Task.WhenAll(directionsTask, projectsTask, internsTask);
+
+        allDirections = await directionsTask;
+        allProjects = await projectsTask;
+        allInterns = await internsTask;
+
+        directionViewModels = allDirections.Select(d => new DirectionViewModel
+        {
+            Direction = d,
+            InternCount = allInterns.Count(i => i.DirectionId == d.Id),
+            Interns = allInterns.Where(i => i.DirectionId == d.Id).ToList(),
+            ShowInterns = false
+        }).ToList();
+
+        projectViewModels = allProjects.Select(p => new ProjectViewModel
+        {
+            Project = p,
+            InternCount = allInterns.Count(i => i.ProjectId == p.Id),
+            Interns = allInterns.Where(i => i.ProjectId == p.Id).ToList(),
+            ShowInterns = false
+        }).ToList();
+    }
+
+    private void SwitchTabDepartments()
+    {
+        activeTab = "departments";
+        currentPage = 1;
+    }
+
+    private void SwitchTabProjects()
+    {
+        activeTab = "projects";
+        currentPage = 1;
+    }
+
+    private void ToggleInterns(DirectionViewModel direction) => direction.ShowInterns = !direction.ShowInterns;
+    private void ToggleInterns(ProjectViewModel project) => project.ShowInterns = !project.ShowInterns;
+
+    private async Task AddDirection()
+    {
+        if (string.IsNullOrWhiteSpace(newDirectionName)) return;
+
+        await DirectionService.AddDirectionAsync(new AddDirectionRequest { Name = newDirectionName, Description = "Описание"});
+        newDirectionName = "";
+        await LoadData();
+    }
+
+    private async Task AddProject()
+    {
+        if (string.IsNullOrWhiteSpace(newProjectName)) return;
+
+        await ProjectService.AddProjectAsync(new AddProjectRequest { Name = newProjectName, Description = "Описание"});
+        newProjectName = "";
+        await LoadData();
+    }
+
+    private async Task DeleteDirection(DirectionViewModel direction)
+    {
+        if (await DirectionService.DeleteDirectionAsync(direction.Direction.Id))
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteProject(ProjectViewModel project)
+    {
+        if (await ProjectService.DeleteProjectAsync(project.Project.Id))
+        {
+            await LoadData();
+        }
+    }
+
+    private void EditDirection(DirectionViewModel direction)
+        => NavigationManager.NavigateTo($"/edit-direction/{direction.Direction.Id}");
+
+    private void EditProject(ProjectViewModel project)
+        => NavigationManager.NavigateTo($"/edit-project/{project.Project.Id}");
+
+    private void SortChanged(ChangeEventArgs e)
+    {
+        sortBy = e.Value?.ToString() ?? "name";
+        _ = LoadData();
+    }
+
+    private IEnumerable<DirectionViewModel> FilteredDirections
+    {
+        get
+        {
+            var list = directionViewModels.AsEnumerable();
+            if (!string.IsNullOrEmpty(searchTerm))
+                list = list.Where(d => d.Direction.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+            return list.Skip((currentPage - 1) * pageSize).Take(pageSize);
+        }
+    }
+
+    private IEnumerable<ProjectViewModel> FilteredProjects
+    {
+        get
+        {
+            var list = projectViewModels.AsEnumerable();
+            if (!string.IsNullOrEmpty(searchTerm))
+                list = list.Where(p => p.Project.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+            return list.Skip((currentPage - 1) * pageSize).Take(pageSize);
+        }
+    }
+
+    private bool HasNextPage
+        => activeTab == "directions"
+            ? directionViewModels.Count > currentPage * pageSize
+            : projectViewModels.Count > currentPage * pageSize;
+
+    private void PrevPage() => currentPage = Math.Max(1, currentPage - 1);
+    private void NextPage() { if (HasNextPage) currentPage++; }
+
+    public void Dispose() { }
+
+    private class DirectionViewModel
+    {
+        public DirectionDto Direction { get; set; }
+        public int InternCount { get; set; }
+        public List<InternDto> Interns { get; set; } = new();
+        public bool ShowInterns { get; set; }
+    }
+
+    private class ProjectViewModel
+    {
+        public ProjectDto Project { get; set; }
+        public int InternCount { get; set; }
+        public List<InternDto> Interns { get; set; } = new();
+        public bool ShowInterns { get; set; }
+    }
+}

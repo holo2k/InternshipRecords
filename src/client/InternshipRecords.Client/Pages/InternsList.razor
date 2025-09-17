@@ -1,26 +1,35 @@
 ﻿@page "/interns"
-@using InternshipRecords.Client.Services
+@using InternshipRecords.Client.Services.Intern
+@using Shared.Models
 @inject InternService InternService
+@inject InternSignalRService InternSignalRService
+@inject NavigationManager NavigationManager
+@implements IDisposable
 
 <div class="card">
     <h3>Список стажеров</h3>
 
     <div class="filter-section">
-        <input placeholder="Фильтр по проекту" @bind="filterProject" class="form-control" />
-        <input placeholder="Фильтр по направлению" @bind="filterDepartment" class="form-control" />
+        <input placeholder="Фильтр по проекту" @bind="_filterProjectName" class="form-control" />
+        <input placeholder="Фильтр по направлению" @bind="_filterDirectionName" class="form-control" />
         <button class="btn" @onclick="ApplyFilter">Применить фильтр</button>
+        <button class="btn" @onclick="LoadInterns">Обновить</button>
     </div>
 
     <div class="interns-list">
-        @foreach (var intern in filteredInterns)
+        @foreach (var intern in _filteredInterns)
         {
-            <div class="intern-card">
+            <div class="intern-card" key="@intern.Id">
                 <strong>@intern.FirstName @intern.LastName</strong>
-                <p>@intern.Department / @intern.Project</p>
+                <p>@(intern.Direction?.Name) / @(intern.Project?.Name)</p>
+                <div class="intern-actions">
+                    <button class="btn btn-sm" @onclick="() => EditIntern(intern)">Редактировать</button>
+                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteIntern(intern.Id)">Удалить</button>
+                </div>
             </div>
         }
 
-        @if (filteredInterns.Count == 0)
+        @if (_filteredInterns.Count == 0)
         {
             <p>Стажеры не найдены.</p>
         }
@@ -28,27 +37,88 @@
 </div>
 
 @code {
-    private List<InternDto> interns = new();
-    private List<InternDto> filteredInterns = new();
-    private string filterProject = "";
-    private string filterDepartment = "";
+    private List<InternDto> _interns = new();
+    private List<InternDto> _filteredInterns = new();
+    private string _filterProjectName = "";
+    private string _filterDirectionName = "";
+    public bool IsConnected = false;
+    public string ConnectionStatusText = "Не подключено";
+    public string ConnectionStatusClass = "status-disconnected";
 
     protected override async Task OnInitializedAsync()
     {
-        // Заглушки, если сервер недоступен
-        interns = await InternService.GetInternsAsync() ?? new List<InternDto>
-        {
-            new() { FirstName="Иван", LastName="Иванов", Department="Backend", Project="Project A" },
-            new() { FirstName="Мария", LastName="Петрова", Department="Frontend", Project="Project B" }
-        };
-        filteredInterns = new List<InternDto>(interns);
+        await LoadInterns();
+        await SetupSignalR();
+    }
+
+    private async Task LoadInterns()
+    {
+        _interns = await InternService.GetInternsAsync() ?? new List<InternDto>();
+        ApplyFilter();
+    }
+
+    private async Task SetupSignalR()
+    {
+        InternSignalRService.InternCreated += HandleInternCreated;
+        InternSignalRService.InternUpdated += HandleInternUpdated;
+        InternSignalRService.InternDeleted += HandleInternDeleted;
+
+        await InternSignalRService.StartAsync();
+        IsConnected = true;
+    }
+
+    private void HandleInternCreated(InternDto intern)
+    {
+        _interns.Add(intern);
+        ApplyFilter();
+        StateHasChanged();
+    }
+
+    private void HandleInternUpdated(InternDto intern)
+    {
+        var index = _interns.FindIndex(i => i.Id == intern.Id);
+        if (index < 0) return;
+
+        _interns[index] = intern;
+        ApplyFilter();
+        StateHasChanged();
+    }
+
+    private void HandleInternDeleted(Guid id)
+    {
+        var intern = _interns.FirstOrDefault(i => i.Id == id);
+        if (intern == null) return;
+
+        _interns.Remove(intern);
+        ApplyFilter();
+        StateHasChanged();
     }
 
     private void ApplyFilter()
     {
-        filteredInterns = interns.FindAll(i =>
-            (string.IsNullOrEmpty(filterProject) || i.Project.Contains(filterProject, StringComparison.OrdinalIgnoreCase)) &&
-            (string.IsNullOrEmpty(filterDepartment) || i.Department.Contains(filterDepartment, StringComparison.OrdinalIgnoreCase))
+        _filteredInterns = _interns.FindAll(i =>
+            (string.IsNullOrEmpty(_filterProjectName) ||
+             (i.Project?.Name?.Contains(_filterProjectName, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+            (string.IsNullOrEmpty(_filterDirectionName) ||
+             (i.Direction?.Name?.Contains(_filterDirectionName, StringComparison.OrdinalIgnoreCase) ?? false))
         );
+    }
+
+
+    private async Task DeleteIntern(Guid id)
+    {
+        await InternService.DeleteInternAsync(id);
+    }
+
+    private void EditIntern(InternDto intern)
+    {
+        NavigationManager.NavigateTo($"/edit-intern/{intern.Id}");
+    }
+
+    public void Dispose()
+    {
+        InternSignalRService.InternCreated -= HandleInternCreated;
+        InternSignalRService.InternUpdated -= HandleInternUpdated;
+        InternSignalRService.InternDeleted -= HandleInternDeleted;
     }
 }

@@ -34,3 +34,34 @@
 .intern-card:hover {
     transform: translateY(-3px);
 }
+
+.connection-status {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.status-connected {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-disconnected {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.intern-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.intern-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
