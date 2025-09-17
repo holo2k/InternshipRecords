@@ -1,4 +1,4 @@
-﻿using InternshipRecords.Domain.Enums;
+﻿using Shared.Enums;
 
 namespace InternshipRecords.Domain.Entities;
 
