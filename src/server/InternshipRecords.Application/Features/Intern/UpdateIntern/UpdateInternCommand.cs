@@ -1,7 +1,5 @@
 ﻿using MediatR;
-using Shared.Models;
-
-rn;
+using Shared.Models.Intern;
 
 namespace InternshipRecords.Application.Features.Intern.UpdateIntern;
 

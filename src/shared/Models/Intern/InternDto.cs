@@ -1,7 +1,6 @@
 ﻿using Shared.Enums;
+using Shared.Models.Direction;
 using Shared.Models.Project;
-
-ing Shared.Models.Direction;
 
 namespace Shared.Models.Intern;
 
@@ -22,6 +21,5 @@ public class InternDto
     public ProjectDto? Project { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
-    public 
-teTime UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

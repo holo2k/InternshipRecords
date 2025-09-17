@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
-using Shared.Models;
-
-rn;
+using Shared.Models.Intern;
 
 namespace InternshipRecords.Client.Services.Intern;
 

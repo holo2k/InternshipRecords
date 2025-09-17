@@ -1,8 +1,8 @@
 ﻿using Shared.Models.Intern;
 
-namespace Shared.Models.Direction;
+namespace Shared.Models.Project;
 
-public class DirectionDto
+public class ProjectDto
 {
     public Guid Id { get; set; }
 
@@ -14,11 +14,5 @@ public class DirectionDto
 
     public DateTime CreatedAt { get; set; }
 
-    
-
-                   p
-        blic
-    D
-eTime UpdatedAt { g
-; set; }
+    public DateTime UpdatedAt { get; set; }
 }

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models.Intern;
 
 namespace InternshipRecords.Application.Features.Intern.GetInterns;
 

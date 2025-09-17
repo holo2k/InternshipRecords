@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using Shared.Models;
 using Shared.Models.Direction;
 
 namespace InternshipRecords.Client.Services;

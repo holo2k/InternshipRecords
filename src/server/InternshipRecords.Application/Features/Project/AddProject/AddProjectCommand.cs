@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Shared.Models;
 
 namespace InternshipRecords.Application.Features.Project.AddProject;
 
