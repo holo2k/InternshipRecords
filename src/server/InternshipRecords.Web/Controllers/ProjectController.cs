@@ -1,5 +1,4 @@
-﻿using InternshipRecords.Application.Features.Project;
-using InternshipRecords.Application.Features.Project.AddProject;
+﻿using InternshipRecords.Application.Features.Project.AddProject;
 using InternshipRecords.Application.Features.Project.AttachInternsToProject;
 using InternshipRecords.Application.Features.Project.DeleteProject;
 using InternshipRecords.Application.Features.Project.GetProjects;
@@ -21,32 +20,38 @@ public class ProjectController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IEnumerable<ProjectDto>> GetAll(GetProjectsQuery query)
+    public async Task<IActionResult> GetAll([FromQuery] string[] queryParams)
     {
-        return await _mediator.Send(query);
+        var query = new GetProjectsQuery
+        {
+            QueryParams = queryParams
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 
     [HttpPost]
-    public async Task<Guid> Create([FromBody] AddProjectCommand command)
+    public async Task<IActionResult> Create([FromBody] AddProjectCommand command)
     {
-        return await _mediator.Send(command);
+        return Ok(await _mediator.Send(command));
     }
 
     [HttpPatch]
-    public async Task<Guid> Update([FromBody] UpdateProjectCommand command)
+    public async Task<IActionResult> Update([FromBody] UpdateProjectCommand command)
     {
-        return await _mediator.Send(command);
+        return Ok(await _mediator.Send(command));
     }
 
     [HttpDelete("{id}")]
-    public async Task<Unit> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        return await _mediator.Send(new DeleteProjectCommand(id));
+        return Ok(await _mediator.Send(new DeleteProjectCommand(id)));
     }
 
     [HttpPost("attach-interns")]
-    public async Task<Unit> AttachInterns([FromBody] AttachInternsToProjectCommand command)
+    public async Task<IActionResult> AttachInterns([FromBody] AttachInternsToProjectCommand command)
     {
-        return await _mediator.Send(command);
+        return Ok(await _mediator.Send(command));
     }
 }

@@ -1,5 +1,4 @@
-﻿using InternshipRecords.Application.Features.Direction;
-using InternshipRecords.Application.Features.Direction.AddDirection;
+﻿using InternshipRecords.Application.Features.Direction.AddDirection;
 using InternshipRecords.Application.Features.Direction.AttachInternsToDirection;
 using InternshipRecords.Application.Features.Direction.DeleteDirection;
 using InternshipRecords.Application.Features.Direction.GetDirections;
@@ -21,32 +20,38 @@ public class DirectionController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IEnumerable<DirectionDto>> GetAll(GetDirectionsQuery query)
+    public async Task<IActionResult> GetAll([FromQuery] string[] queryParams)
     {
-        return await _mediator.Send(query);
+        var query = new GetDirectionsQuery
+        {
+            QueryParams = queryParams
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 
     [HttpPost]
-    public async Task<Guid> Create([FromBody] AddDirectionCommand command)
+    public async Task<IActionResult> Create([FromBody] AddDirectionCommand command)
     {
-        return await _mediator.Send(command);
+        return Ok(await _mediator.Send(command));
     }
 
     [HttpPatch]
-    public async Task<Guid> Update([FromBody] UpdateDirectionCommand command)
+    public async Task<IActionResult> Update([FromBody] UpdateDirectionCommand command)
     {
-        return await _mediator.Send(command);
+        return Ok(await _mediator.Send(command));
     }
 
     [HttpDelete("{id}")]
-    public async Task<Unit> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        return await _mediator.Send(new DeleteDirectionCommand(id));
+        return Ok(await _mediator.Send(new DeleteDirectionCommand(id)));
     }
 
     [HttpPost("attach-interns")]
-    public async Task<Unit> AttachInterns([FromBody] AttachInternsToDirectionCommand command)
+    public async Task<IActionResult> AttachInterns([FromBody] AttachInternsToDirectionCommand command)
     {
-        return await _mediator.Send(command);
+        return Ok(await _mediator.Send(command));
     }
 }

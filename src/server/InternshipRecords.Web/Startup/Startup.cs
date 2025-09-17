@@ -1,7 +1,9 @@
 ﻿using System.Text.Json.Serialization;
 using FluentValidation;
 using InternshipRecords.Application.AutoMapper;
+using InternshipRecords.Application.Features.Intern.GetInterns;
 using InternshipRecords.Infrastructure;
+using InternshipRecords.Web.Hub;
 using InternshipRecords.Web.PipelineBehaviors;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +31,8 @@ public static class Startup
 
         services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
-        services.AddMediatR(c => c.RegisterServicesFromAssembly(typeof(Program).Assembly));
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(GetInternsQueryHandler).Assembly));
 
         ValidatorOptions.Global.DefaultClassLevelCascadeMode = CascadeMode.Stop;
         ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
@@ -48,14 +51,18 @@ public static class Startup
     {
         await app.MigrateDatabaseAsync();
 
+        app.UseRouting();
+
         app.UseCors("AllowClient");
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+            endpoints.MapHub<InternsHub>("/internHub");
+        });
 
         app.AddExceptionHandler();
 
-        app.UseRouting();
-
         app.AddSwagger();
-
-        app.MapControllers();
     }
 }

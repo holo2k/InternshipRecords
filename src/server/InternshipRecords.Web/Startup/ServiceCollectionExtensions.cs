@@ -31,7 +31,7 @@ public static class ServiceCollectionExtensions
         {
             options.AddPolicy("AllowClient", builder =>
             {
-                builder.WithOrigins("https://localhost:5000")
+                builder.WithOrigins("http://localhost:5000")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
