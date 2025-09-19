@@ -11,6 +11,10 @@ using Shared.Models.Intern;
 
 namespace InternshipRecords.Web.Controllers;
 
+/// <summary>
+///     API для управления стажёрами.
+///     Отправляет уведомления в SignalR-хаб при создании, обновлении и удалении стажёров.
+/// </summary>
 [ApiController]
 [Route("api/intern")]
 public class InternController : ControllerBase
@@ -24,15 +28,34 @@ public class InternController : ControllerBase
         _hub = hub;
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetAll([FromQuery] Guid id)
+    /// <summary>
+    ///     Получить стажёра по идентификатору.
+    /// </summary>
+    /// <param name="id">Идентификатор стажёра.</param>
+    /// <returns>DTO стажёра.</returns>
+    [HttpGet("{id:guid}")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(InternDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Get(Guid id)
     {
         var query = new GetInternQuery(id);
         var intern = await _mediator.Send(query);
         return Ok(intern);
     }
 
+    /// <summary>
+    ///     Получить список стажёров.
+    ///     Поддерживаются фильтры по directionId и projectId.
+    /// </summary>
+    /// <param name="directionId">Фильтр по направлению (опционально).</param>
+    /// <param name="projectId">Фильтр по проекту (опционально).</param>
+    /// <returns>Список стажёров.</returns>
     [HttpGet]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(IEnumerable<InternDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAll([FromQuery] Guid? directionId, [FromQuery] Guid? projectId)
     {
         var query = new GetInternsQuery(directionId, projectId);
@@ -40,7 +63,17 @@ public class InternController : ControllerBase
         return Ok(list);
     }
 
+    /// <summary>
+    ///     Создать нового стажёра.
+    ///     Отправляет событие InternCreated в SignalR-хаб с созданным DTO.
+    /// </summary>
+    /// <param name="request">Данные для создания стажёра.</param>
+    /// <returns>Созданный DTO стажёра.</returns>
     [HttpPost]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(InternDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] AddInternRequest request)
     {
         var id = await _mediator.Send(new AddInternCommand(request));
@@ -49,7 +82,18 @@ public class InternController : ControllerBase
         return Ok(created);
     }
 
+    /// <summary>
+    ///     Обновить существующего стажёра.
+    ///     Отправляет событие InternUpdated в SignalR-хаб с обновлённым DTO.
+    /// </summary>
+    /// <param name="request">Данные для обновления (включая Id).</param>
+    /// <returns>Обновлённый DTO стажёра.</returns>
     [HttpPatch]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(InternDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update([FromBody] UpdateInternRequest request)
     {
         var id = await _mediator.Send(new UpdateInternCommand(request));
@@ -58,7 +102,16 @@ public class InternController : ControllerBase
         return Ok(updated);
     }
 
-    [HttpDelete("{id}")]
+    /// <summary>
+    ///     Удалить стажёра по идентификатору.
+    ///     Отправляет событие InternDeleted в SignalR-хаб с Id удалённого.
+    /// </summary>
+    /// <param name="id">Идентификатор удаляемого стажёра.</param>
+    /// <returns>200 OK при успешном удалении.</returns>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _mediator.Send(new DeleteInternCommand(id));
