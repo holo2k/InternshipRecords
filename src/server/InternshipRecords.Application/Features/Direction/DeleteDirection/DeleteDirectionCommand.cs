@@ -2,4 +2,4 @@
 
 namespace InternshipRecords.Application.Features.Direction.DeleteDirection;
 
-public record DeleteDirectionCommand(Guid DirectionId) : IRequest<Unit>;
+public record DeleteDirectionCommand(Guid DirectionId) : IRequest<Guid>;

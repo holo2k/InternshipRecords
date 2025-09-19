@@ -3,7 +3,7 @@ using MediatR;
 
 namespace InternshipRecords.Application.Features.Direction.DeleteDirection;
 
-public class DeleteDirectionCommandHandler : IRequestHandler<DeleteDirectionCommand, Unit>
+public class DeleteDirectionCommandHandler : IRequestHandler<DeleteDirectionCommand, Guid>
 {
     private readonly IDirectionRepository _directionRepository;
 
@@ -12,9 +12,8 @@ public class DeleteDirectionCommandHandler : IRequestHandler<DeleteDirectionComm
         _directionRepository = directionRepository;
     }
 
-    public async Task<Unit> Handle(DeleteDirectionCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(DeleteDirectionCommand request, CancellationToken cancellationToken)
     {
-        await _directionRepository.DeleteAsync(request.DirectionId);
-        return Unit.Value;
+        return await _directionRepository.DeleteAsync(request.DirectionId);
     }
 }
