@@ -2,4 +2,4 @@
 
 namespace InternshipRecords.Application.Features.Project.DeleteProject;
 
-public record DeleteProjectCommand(Guid ProjectId) : IRequest<Unit>;
+public record DeleteProjectCommand(Guid ProjectId) : IRequest<Guid>;

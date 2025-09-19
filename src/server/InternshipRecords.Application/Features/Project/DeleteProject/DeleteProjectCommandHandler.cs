@@ -3,7 +3,7 @@ using MediatR;
 
 namespace InternshipRecords.Application.Features.Project.DeleteProject;
 
-public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand, Unit>
+public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand, Guid>
 {
     private readonly IProjectRepository _projectRepository;
 
@@ -12,9 +12,8 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand,
         _projectRepository = projectRepository;
     }
 
-    public async Task<Unit> Handle(DeleteProjectCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(DeleteProjectCommand request, CancellationToken cancellationToken)
     {
-        await _projectRepository.DeleteAsync(request.ProjectId);
-        return Unit.Value;
+        return await _projectRepository.DeleteAsync(request.ProjectId);
     }
 }
