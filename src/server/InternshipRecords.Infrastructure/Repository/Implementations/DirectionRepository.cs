@@ -49,7 +49,7 @@ public class DirectionRepository : IDirectionRepository
             throw new KeyNotFoundException($"Direction with id {id} not found");
 
         if (existing.Interns.Any())
-            throw new InvalidOperationException("Нельзя удалить направление, к которому привязаны стажёры.");
+            return Guid.Empty;
 
         _appDbContext.Directions.Remove(existing);
         await _appDbContext.SaveChangesAsync();

@@ -9,4 +9,7 @@ public interface IInternRepository
     Task<Guid> DeleteAsync(Guid id);
     Task<Intern?> GetByIdAsync(Guid id);
     Task<ICollection<Intern>> GetAllAsync(Guid? directionId, Guid? projectId);
+    Task<ICollection<Intern>> GetManyAsync(List<Guid> internIds);
+    Task<ICollection<Intern>> GetByDirectionIdAsync(Guid directionId);
+    Task<ICollection<Intern>> GetByProjectIdAsync(Guid projectId);
 }

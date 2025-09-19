@@ -27,9 +27,12 @@ public class ProjectRepository : IProjectRepository
             .FirstOrDefaultAsync(p => p.Id == project.Id);
 
         if (existing == null)
-            throw new KeyNotFoundException($"Project with id {project.Id} not found");
+            throw new KeyNotFoundException($"Проект с ID {project.Id} не найден");
 
-        _appDbContext.Projects.Update(project);
+        existing.Name = project.Name;
+        existing.Description = project.Description;
+        existing.UpdatedAt = project.UpdatedAt;
+
         await _appDbContext.SaveChangesAsync();
 
         return existing.Id;
@@ -38,10 +41,14 @@ public class ProjectRepository : IProjectRepository
     public async Task<Guid> DeleteAsync(Guid id)
     {
         var existing = await _appDbContext.Projects
+            .Include(p => p.Interns)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (existing == null)
-            throw new KeyNotFoundException($"Project with id {id} not found");
+            throw new KeyNotFoundException($"Проект с ID {id} не найден");
+
+        if (existing.Interns.Any())
+            return Guid.Empty;
 
         _appDbContext.Projects.Remove(existing);
         await _appDbContext.SaveChangesAsync();
@@ -77,7 +84,7 @@ public class ProjectRepository : IProjectRepository
             .FirstOrDefaultAsync(p => p.Id == projectId);
 
         if (project == null)
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
+            throw new KeyNotFoundException($"Проект с ID {projectId} не найден");
 
         var interns = await _appDbContext.Interns
             .Where(i => internIds.Contains(i.Id))
