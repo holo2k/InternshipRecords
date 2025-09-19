@@ -27,7 +27,7 @@ public class UpdateInternCommandValidator : AbstractValidator<UpdateInternComman
             .EmailAddress().WithMessage("Некорректный формат Email");
 
         RuleFor(x => x.Intern.BirthDate)
-            .LessThan(DateTime.UtcNow).WithMessage("Дата рождения не может быть в будущем");
+            .LessThan(DateOnly.FromDateTime(DateTime.UtcNow)).WithMessage("Дата рождения не может быть в будущем");
 
         RuleFor(x => x.Intern.Phone)
             .MaximumLength(20).WithMessage("Телефон не должен превышать 20 символов");

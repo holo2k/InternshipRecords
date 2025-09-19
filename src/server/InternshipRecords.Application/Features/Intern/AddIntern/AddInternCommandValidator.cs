@@ -28,7 +28,7 @@ public class AddInternCommandValidator : AbstractValidator<AddInternCommand>
             .WithMessage("Некорректный формат телефона");
 
         RuleFor(x => x.Intern.BirthDate)
-            .LessThan(DateTime.UtcNow.AddYears(-16))
+            .LessThan(DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-16)))
             .WithMessage("Стажёр должен быть старше 16 лет");
     }
 }
