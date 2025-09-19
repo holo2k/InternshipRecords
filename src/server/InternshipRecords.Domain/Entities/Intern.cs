@@ -10,7 +10,7 @@ public class Intern
     public Gender Gender { get; set; }
     public string Email { get; set; } = null!;
     public string? Phone { get; set; }
-    public DateTime BirthDate { get; set; }
+    public DateOnly BirthDate { get; set; }
 
     public Guid? DirectionId { get; set; }
     public Direction? Direction { get; set; } = null!;
