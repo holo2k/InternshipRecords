@@ -1,224 +1,150 @@
 ﻿@page "/edit-intern/{Id:guid}"
-@using InternshipRecords.Client.Services
 @using InternshipRecords.Client.Services.Intern
-@using Shared.Models
-@using Shared.Models.Project
+@using InternshipRecords.Client.Services
 @using Shared.Models.Intern
 @using Shared.Models.Direction
+@using Shared.Models.Project
 @inject InternService InternService
 @inject DirectionService DirectionService
 @inject ProjectService ProjectService
 @inject NavigationManager NavigationManager
 
-<div class="card">
-    <h3>Редактирование стажера</h3>
+<div class="page-center">
+    <div class="card p-3" style="max-width:800px;">
+        <h3>Редактирование стажера</h3>
 
-    @if (intern.FirstName.Length == 0)
-    {
-        <p>Загрузка...</p>
-    }
-    else
-    {
-        <EditForm Model="internRequest" OnValidSubmit="HandleValidSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
+        @if (!_loaded)
+        {
+            <p>Загрузка...</p>
+        }
+        else
+        {
+            <EditForm Model="_internRequest" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
 
-            <div class="form-group">
-                <label>Имя:</label>
-                <InputText @bind-Value="internRequest.FirstName" class="form-control" />
-            </div>
-
-            <div class="form-group">
-                <label>Фамилия:</label>
-                <InputText @bind-Value="internRequest.LastName" class="form-control" />
-            </div>
-
-            <div class="form-group">
-                <label>Пол:</label>
-                <InputSelect @bind-Value="internRequest.Gender" class="form-control">
-                    <option value="">Выберите пол</option>
-                    <option value="Male">Мужской</option>
-                    <option value="Female">Женский</option>
-                </InputSelect>
-            </div>
-
-            <div class="form-group">
-                <label>Email:</label>
-                <InputText @bind-Value="internRequest.Email" class="form-control" />
-            </div>
-
-            <div class="form-group">
-                <label>Телефон:</label>
-                <InputText @bind-Value="internRequest.Phone" class="form-control" placeholder="+7..." />
-            </div>
-
-            <div class="form-group">
-                <label>Дата рождения:</label>
-                <InputDate @bind-Value="internRequest.BirthDate" class="form-control" />
-            </div>
-
-            <div class="form-group">
-                <label>Направление стажировки:</label>
-                <InputSelect @bind-Value="internRequest.DirectionId" class="form-control">
-                    <option value="">Выберите направление</option>
-                    @foreach (var d in directions)
-                    {
-                        <option value="@d.Id">@d.Name</option>
-                    }
-                </InputSelect>
-                <div class="add-item">
-                    <InputText placeholder="Новое направление" @bind-Value="newDirectionName" class="form-control" />
-                    <button type="button" class="btn" @onclick="AddDirection">Добавить</button>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <div style="flex:1;min-width:180px">
+                        <label>Имя</label>
+                        <InputText @bind-Value="_internRequest.FirstName" class="form-control" />
+                    </div>
+                    <div style="flex:1;min-width:180px">
+                        <label>Фамилия</label>
+                        <InputText @bind-Value="_internRequest.LastName" class="form-control" />
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>Текущий проект:</label>
-                <InputSelect @bind-Value="internRequest.ProjectId" class="form-control">
-                    <option value="">Выберите проект</option>
-                    @foreach (var p in projects)
-                    {
-                        <option value="@p.Id">@p.Name</option>
-                    }
-                </InputSelect>
-                <div class="add-item">
-                    <InputText placeholder="Новый проект" @bind-Value="newProjectName" class="form-control" />
-                    <button type="button" class="btn" @onclick="AddProject">Добавить</button>
+                <div style="display:flex;gap:10px;margin-top:8px">
+                    <div style="flex:1;min-width:180px">
+                        <label>Пол</label>
+                        <InputSelect TValue="Shared.Enums.Gender" @bind-Value="_internRequest.Gender" class="form-control">
+                            @foreach (Shared.Enums.Gender g in Enum.GetValues(typeof(Shared.Enums.Gender)))
+                            {
+                                <option value="@g">@g</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div style="flex:1;min-width:180px">
+                        <label>Email</label>
+                        <InputText @bind-Value="_internRequest.Email" class="form-control" />
+                    </div>
                 </div>
-            </div>
 
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-            <button type="button" class="btn btn-secondary" @onclick="Cancel">Отмена</button>
-        </EditForm>
-    }
-    <EditForm Model="@internRequest" OnValidSubmit="@HandleValidSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+                <div style="display:flex;gap:10px;margin-top:8px">
+                    <div style="flex:1;min-width:180px">
+                        <label>Телефон</label>
+                        <InputText @bind-Value="_internRequest.Phone" class="form-control" />
+                    </div>
 
-        <div class="form-group">
-            <label>Имя:</label>
-            <InputText @bind-Value="@internRequest.FirstName" class="form-control" />
-        </div>
+                    <div style="flex:1;min-width:180px">
+                        <label>Дата рождения</label>
+                        <InputDate @bind-Value="_internRequest.BirthDate" class="form-control" />
+                    </div>
+                </div>
 
-        <div class="form-group">
-            <label>Фамилия:</label>
-            <InputText @bind-Value="@internRequest.LastName" class="form-control" />
-        </div>
+                <div style="display:flex;gap:10px;margin-top:8px">
+                    <div style="flex:1;min-width:220px">
+                        <label>Направление</label>
+                        <InputSelect @bind-Value="_internRequest.DirectionId" class="form-control">
+                            <option value="">Нет</option>
+                            @foreach (var d in _directions)
+                            {
+                                @:@d.Id">@d.Name
+                                @:</option>
+                            }
+                        </InputSelect>
+                    </div>
 
-        <div class="form-group">
-            <label>Пол:</label>
-            <InputSelect @bind-Value="@internRequest.Gender" class="form-control">
-                <option value="">Выберите пол</option>
-                <option value="Male">Мужской</option>
-                <option value="Female">Женский</option>
-            </InputSelect>
-        </div>
+                    <div style="flex:1;min-width:220px">
+                        <label>Проект</label>
+                        <InputSelect @bind-Value="_internRequest.ProjectId" class="form-control">
+                            <option value="">Нет</option>
+                            @foreach (var p in _projects)
+                            {
+                                
+                                if (p != null)
+                                {
+                                    @:@p.Id">@p.Name
+                                }
+                                @:</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
 
-        <div class="form-group">
-            <label>Email:</label>
-            <InputText @bind-Value="@internRequest.Email" class="form-control" />
-        </div>
-
-        <div class="form-group">
-            <label>Телефон:</label>
-            <InputText @bind-Value="@internRequest.Phone" class="form-control" placeholder="+7..." />
-        </div>
-
-        <div class="form-group">
-            <label>Дата рождения:</label>
-            <InputDate @bind-Value="@internRequest.BirthDate" class="form-control" />
-        </div>
-
-        <div class="form-group">
-            <label>Направление стажировки:</label>
-            <InputSelect @bind-Value="@internRequest.DirectionId" class="form-control">
-                <option value="">Выберите направление</option>
-                @foreach (var d in directions)
-                {
-                    <option value="@d.Id">@d.Name</option>
-                }
-            </InputSelect>
-            <div class="add-item">
-                <InputText placeholder="Новое направление" @bind-Value="@newDirectionName" class="form-control" />
-                <button type="button" class="btn" @onclick="@AddDirection">Добавить</button>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>Текущий проект:</label>
-            <InputSelect @bind-Value="@internRequest.ProjectId" class="form-control">
-                <option value="">Выберите проект</option>
-                @foreach (var p in projects)
-                {
-                    <option value="@p.Id">@p.Name</option>
-                }
-            </InputSelect>
-            <div class="add-item">
-                <InputText placeholder="Новый проект" @bind-Value="@newProjectName" class="form-control" />
-                <button type="button" class="btn" @onclick="@AddProject">Добавить</button>
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        <button type="button" class="btn btn-secondary" @onclick="@Cancel">Отмена</button>
-    </EditForm>
+                <div style="margin-top:12px;display:flex;gap:8px">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Отмена</button>
+                </div>
+            </EditForm>
+        }
+    </div>
 </div>
 
 @code {
-    [Parameter]
-    public Guid Id { get; set; }
-
-    private InternDto intern;
-    private UpdateInternRequest internRequest = new UpdateInternRequest();
-    private List<DirectionDto> directions = new();
-    private List<ProjectDto> projects = new();
-    private string newDirectionName = "";
-    private string newProjectName = "";
+    [Parameter] public Guid Id { get; set; }
+    private bool _loaded;
+    private InternDto _intern = new();
+    private readonly UpdateInternRequest _internRequest = new();
+    private List<DirectionDto> _directions = new();
+    private List<ProjectDto?> _projects = new();
 
     protected override async Task OnInitializedAsync()
     {
-        intern = await InternService.GetInternAsync(Id);
-        if (intern.FirstName.Length > 0)
-        {
-            internRequest.Id = intern.Id;
-            internRequest.FirstName = intern.FirstName;
-            internRequest.LastName = intern.LastName;
-        }
+        await LoadLookups();
+        await LoadIntern();
     }
 
-    private async Task AddDirection()
+    private async Task LoadLookups()
     {
-        if (!string.IsNullOrWhiteSpace(newDirectionName))
-        {
-            var newDirection = await DirectionService.AddDirectionAsync(new AddDirectionRequest { Name = newDirectionName });
-            if (newDirection != null)
-            {
-                directions.Add(newDirection);
-                internRequest.DirectionId = newDirection.Id;
-                newDirectionName = "";
-            }
-        }
+        _directions = await DirectionService.GetDirectionsAsync();
+        _projects = await ProjectService.GetProjectsAsync();
     }
 
-    private async Task AddProject()
+    private async Task LoadIntern()
     {
-        if (!string.IsNullOrWhiteSpace(newProjectName))
-        {
-            var newProject = await ProjectService.AddProjectAsync(new AddProjectRequest { Name = newProjectName });
-            if (newProject != null)
-            {
-                projects.Add(newProject);
-                internRequest.ProjectId = newProject.Id;
-                newProjectName = "";
-            }
-        }
+        _intern = await InternService.GetInternAsync(Id);
+
+        _internRequest.Id = _intern.Id;
+        _internRequest.FirstName = _intern.FirstName;
+        _internRequest.LastName = _intern.LastName;
+        _internRequest.Email = _intern.Email;
+        _internRequest.Phone = _intern.Phone;
+        _internRequest.BirthDate = _intern.BirthDate;
+        _internRequest.DirectionId = _intern.DirectionId;
+        _internRequest.ProjectId = _intern.ProjectId;
+        _internRequest.Gender = _intern.Gender;
+
+        _loaded = true;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task HandleValidSubmit()
     {
         try
         {
-            await InternService.UpdateInternAsync(internRequest);
+            await InternService.UpdateInternAsync(_internRequest);
             NavigationManager.NavigateTo("/interns");
         }
         catch (Exception ex)
@@ -227,8 +153,5 @@
         }
     }
 
-    private void Cancel()
-    {
-        NavigationManager.NavigateTo("/interns");
-    }
+    private void Cancel() => NavigationManager.NavigateTo("/interns");
 }

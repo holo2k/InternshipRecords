@@ -6,6 +6,14 @@
     margin-bottom: 1rem;
 }
 
+.page-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background: #f4f6f9;
+}
+
 .filter-section input {
     flex: 1;
     min-width: 150px;
@@ -15,18 +23,18 @@
     flex-shrink: 0;
 }
 
-/* --- Список стажеров --- */
 .interns-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
 }
 
-/* --- Карточка стажера --- */
 .intern-card {
     background: white;
+    max-width:1100px;
     border-radius: 12px;
     padding: 1rem;
+    box-shadow: 0 4px 12px #000000;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     transition: transform 0.2s ease;
 }

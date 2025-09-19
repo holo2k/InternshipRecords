@@ -1,12 +1,23 @@
 ﻿using System.Net.Http.Json;
-using Shared.Models;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Shared.Models.Direction;
+using Shared.Models.Project;
 
 namespace InternshipRecords.Client.Services;
 
 public class DirectionService
 {
     private readonly HttpClient _http;
+
+    private readonly JsonSerializerOptions _options = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters =
+        {
+            new JsonStringEnumConverter()
+        }
+    };
 
     public DirectionService(HttpClient http)
     {
@@ -20,11 +31,11 @@ public class DirectionService
             var url = "api/direction";
 
             if (queryParams is not { Length: > 0 })
-                return await _http.GetFromJsonAsync<List<DirectionDto>>(url) ?? new List<DirectionDto>();
+                return (await _http.GetFromJsonAsync<List<DirectionDto>>(url))!;
             var queryString = string.Join("&", queryParams.Select(p => $"queryParams={Uri.EscapeDataString(p)}"));
             url += "?" + queryString;
 
-            return await _http.GetFromJsonAsync<List<DirectionDto>>(url) ?? new List<DirectionDto>();
+            return (await _http.GetFromJsonAsync<List<DirectionDto>>(url, _options))!;
         }
         catch (Exception ex)
         {
@@ -34,13 +45,26 @@ public class DirectionService
     }
 
 
-    public async Task<DirectionDto> AddDirectionAsync(AddDirectionRequest request)
+    public async Task<DirectionDto?> UpdateDirectionAsync(UpdateDirectionRequest request)
+    {
+        try
+        {
+            var response = await _http.PatchAsJsonAsync("api/direction", request);
+            return await response.Content.ReadFromJsonAsync<DirectionDto>(_options);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при обновлении направления: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<DirectionDto?> AddDirectionAsync(AddDirectionRequest request)
     {
         try
         {
             var response = await _http.PostAsJsonAsync("api/direction", request);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<DirectionDto>();
+            return await response.Content.ReadFromJsonAsync<DirectionDto>(_options);
         }
         catch (Exception ex)
         {
@@ -49,17 +73,17 @@ public class DirectionService
         }
     }
 
-    public async Task<bool> DeleteDirectionAsync(Guid id)
+    public async Task<Guid> DeleteDirectionAsync(Guid id)
     {
         try
         {
             var response = await _http.DeleteAsync($"api/direction/{id}");
-            return response.IsSuccessStatusCode;
+            return await response.Content.ReadFromJsonAsync<Guid>();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Ошибка при удалении направления: {ex.Message}");
-            return false;
+            return Guid.Empty;
         }
     }
 }

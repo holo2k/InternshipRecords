@@ -1,7 +1,6 @@
 ﻿@page "/add-intern"
 @using InternshipRecords.Client.Services
 @using InternshipRecords.Client.Services.Intern
-@using Shared.Models
 @using Shared.Models.Project
 @using Shared.Models.Intern
 @using Shared.Models.Direction
@@ -10,132 +9,257 @@
 @inject ProjectService ProjectService
 @inject NavigationManager NavigationManager
 
-<div class="card">
-    <h3>Добавление нового стажера</h3>
+<div class="page-center">
+    <div class="edit-card">
+        <h3 class="mb-3">Добавление нового стажера</h3>
+        @if (!string.IsNullOrWhiteSpace(_serverErrorMessage))
+        {
+            <div class="alert alert-danger">@_serverErrorMessage</div>
+        }
+        <EditForm Model="_internRequest" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-    <EditForm Model="internRequest" OnValidSubmit="HandleValidSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+            <div class="form-grid">
+                <div>
+                    <label>Имя</label>
+                    <InputText @bind-Value="_internRequest.FirstName" class="form-control" />
+                </div>
 
-        <div class="form-group">
-            <label>Имя:</label>
-            <InputText @bind-Value="internRequest.FirstName" class="form-control" />
-        </div>
+                <div>
+                    <label>Фамилия</label>
+                    <InputText @bind-Value="_internRequest.LastName" class="form-control" />
+                </div>
 
-        <div class="form-group">
-            <label>Фамилия:</label>
-            <InputText @bind-Value="internRequest.LastName" class="form-control" />
-        </div>
+                <div>
+                    <label>Пол</label>
+                    <InputSelect @bind-Value="_internRequest.Gender" class="form-control">
+                        <option disabled value="">-- выберите --</option>
+                        <option value="Male">Мужской</option>
+                        <option value="Female">Женский</option>
+                    </InputSelect>
+                </div>
 
-        <div class="form-group">
-            <label>Пол:</label>
-            <InputSelect @bind-Value="internRequest.Gender" class="form-control">
-                <option value="">Выберите пол</option>
-                <option value="Male">Мужской</option>
-                <option value="Female">Женский</option>
-            </InputSelect>
-        </div>
+                <div>
+                    <label>Email</label>
+                    <InputText @bind-Value="_internRequest.Email" class="form-control" />
+                </div>
 
-        <div class="form-group">
-            <label>Email:</label>
-            <InputText @bind-Value="internRequest.Email" class="form-control" />
-        </div>
+                <div>
+                    <label>Телефон</label>
+                    <InputText @bind-Value="_internRequest.Phone" class="form-control" placeholder="+7..." />
+                </div>
 
-        <div class="form-group">
-            <label>Телефон:</label>
-            <InputText @bind-Value="internRequest.Phone" class="form-control" placeholder="+7..." />
-        </div>
+                <div>
+                    <label>Дата рождения</label>
+                    <InputDate @bind-Value="_internRequest.BirthDate" class="form-control"  />
+                </div>
 
-        <div class="form-group">
-            <label>Дата рождения:</label>
-            <InputDate @bind-Value="internRequest.BirthDate" class="form-control" />
-        </div>
+                <div>
+                    <label>Направление стажировки</label>
+                    <InputSelect @bind-Value="SelectedDirectionSelection" class="form-control">
+                        <option disabled value="">Выберите направление</option>
+                        <option value="__new__">+ Новое направление</option>
+                        @foreach (var d in _directions)
+                        {
+                            <option value="@d.Id.ToString()">@d.Name</option>
+                        }
+                    </InputSelect>
 
-        <div class="form-group">
-            <label>Направление стажировки:</label>
-            <InputSelect @bind-Value="internRequest.DirectionId" class="form-control">
-                <option value="">Выберите направление</option>
-                @foreach (var d in _directions)
-                {
-                    <option value="@d.Id">@d.Name</option>
-                }
-            </InputSelect>
-            <div class="add-item">
-                <InputText placeholder="Новое направление" @bind-Value="_newDirectionName" class="form-control" />
-                <button type="button" class="btn" @onclick="AddDirection">Добавить</button>
+                    @if (_showNewDirectionInput)
+                    {
+                        <div>
+                            <InputText placeholder="Название" @bind-Value="_newDirectionName" class="form-control" />
+                            <InputText placeholder="Описание" @bind-Value="_newDirectionDescription" class="form-control" />
+                        </div>
+                    }
+                </div>
+
+                <div>
+                    <label>Текущий проект</label>
+                    <InputSelect @bind-Value="SelectedProjectSelection" class="form-control">
+                        <option disabled value="">Выберите проект</option>
+                        <option value="__new__">+ Новый проект</option>
+                        @foreach (var p in _projects)
+                        {
+                            <option value="@p?.Id.ToString()">@p?.Name</option>
+                        }
+                    </InputSelect>
+
+                    @if (_showNewProjectInput)
+                    {
+                        <div>
+                            <InputText placeholder="Название" @bind-Value="_newProjectName" class="form-control" />
+                            <InputText placeholder="Описание" @bind-Value="_newProjectDescription" class="form-control" />
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label>Текущий проект:</label>
-            <InputSelect @bind-Value="internRequest.ProjectId" class="form-control">
-                <option value="">Выберите проект</option>
-                @foreach (var p in _projects)
-                {
-                    <option value="@p.Id">@p.Name</option>
-                }
-            </InputSelect>
-            <div class="add-item">
-                <InputText placeholder="Новый проект" @bind-Value="_newProjectName" class="form-control" />
-                <button type="button" class="btn" @onclick="AddProject">Добавить</button>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Отмена</button>
             </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        <button type="button" class="btn btn-secondary" @onclick="Cancel">Отмена</button>
-    </EditForm>
+        </EditForm>
+    </div>
 </div>
 
+
 @code {
-    private readonly AddInternRequest internRequest = new AddInternRequest();
+    private readonly AddInternRequest _internRequest = new();
     private List<DirectionDto> _directions = new();
-    private List<ProjectDto> _projects = new();
+    private List<ProjectDto?> _projects = new();
     private string _newDirectionName = "";
     private string _newProjectName = "";
+    private string _newDirectionDescription = "";
+    private string _newProjectDescription = "";
+
+    private string _selectedDirectionSelection = "";
+    private string _selectedProjectSelection = "";
+    private bool _showNewDirectionInput;
+    private bool _showNewProjectInput;
+    private string? _serverErrorMessage;
+
+    private string SelectedDirectionSelection
+    {
+        get => _selectedDirectionSelection;
+        set
+        {
+            _selectedDirectionSelection = value;
+            HandleDirectionSelection(value);
+        }
+    }
+
+    private string SelectedProjectSelection
+    {
+        get => _selectedProjectSelection;
+        set
+        {
+            _selectedProjectSelection = value;
+            HandleProjectSelection(value);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         _directions = await DirectionService.GetDirectionsAsync();
         _projects = await ProjectService.GetProjectsAsync();
+        _internRequest.BirthDate = DateOnly.FromDateTime(DateTime.Today.AddYears(-18));
     }
 
-    private async Task AddDirection()
+    private void HandleDirectionSelection(string val)
     {
-        if (!string.IsNullOrWhiteSpace(_newDirectionName))
+        if (val == "__new__")
         {
-            var newDirection = await DirectionService.AddDirectionAsync(new AddDirectionRequest { Name = _newDirectionName });
-            _directions.Add(newDirection);
-            internRequest.DirectionId = newDirection.Id;
-            _newDirectionName = "";
+            _showNewDirectionInput = true;
+            _internRequest.DirectionId = null;
+        }
+        else if (Guid.TryParse(val, out var id))
+        {
+            _showNewDirectionInput = false;
+            _internRequest.DirectionId = id;
+        }
+        else
+        {
+            _showNewDirectionInput = false;
+            _internRequest.DirectionId = null;
         }
     }
 
-    private async Task AddProject()
+    private void HandleProjectSelection(string val)
     {
-        if (!string.IsNullOrWhiteSpace(_newProjectName))
+        if (val == "__new__")
         {
-            var newProject = await ProjectService.AddProjectAsync(new AddProjectRequest { Name = _newProjectName });
-            _projects.Add(newProject);
-            internRequest.ProjectId = newProject.Id;
-            _newProjectName = "";
+            _showNewProjectInput = true;
+            _internRequest.ProjectId = null;
+        }
+        else if (Guid.TryParse(val, out var id))
+        {
+            _showNewProjectInput = false;
+            _internRequest.ProjectId = id;
+        }
+        else
+        {
+            _showNewProjectInput = false;
+            _internRequest.ProjectId = null;
+        }
+    }
+
+    private async Task<DirectionDto?> GetOrCreateDirectionAsync(string name)
+    {
+        var list = await DirectionService.GetDirectionsAsync();
+        var found = list.FirstOrDefault(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (found != null) return found;
+
+        try
+        {
+            var created = await DirectionService.AddDirectionAsync(new AddDirectionRequest { Name = name, Description = _newDirectionDescription });
+            return created;
+        }
+        catch
+        {
+            list = await DirectionService.GetDirectionsAsync();
+            found = list.FirstOrDefault(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (found != null) return found;
+            throw;
+        }
+    }
+
+    private async Task<ProjectDto?> GetOrCreateProjectAsync(string name)
+    {
+        var list = await ProjectService.GetProjectsAsync();
+        var found = list.FirstOrDefault(p => string.Equals(p!.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (found != null) return found;
+
+        try
+        {
+            var created = await ProjectService.AddProjectAsync(new AddProjectRequest { Name = name, Description = _newProjectDescription });
+            return created;
+        }
+        catch
+        {
+            list = await ProjectService.GetProjectsAsync();
+            found = list.FirstOrDefault(p => string.Equals(p!.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (found != null) return found;
+            throw;
         }
     }
 
     private async Task HandleValidSubmit()
     {
+        _serverErrorMessage = null;
+
         try
         {
-            await InternService.AddInternAsync(internRequest);
+            if (_showNewDirectionInput && !string.IsNullOrWhiteSpace(_newDirectionName))
+            {
+                var dir = await GetOrCreateDirectionAsync(_newDirectionName.Trim());
+                _internRequest.DirectionId = dir!.Id;
+                if (_directions.All(d => d.Id != dir.Id)) _directions.Add(dir);
+                _selectedDirectionSelection = dir.Id.ToString();
+            }
+
+            if (_showNewProjectInput && !string.IsNullOrWhiteSpace(_newProjectName))
+            {
+                var proj = await GetOrCreateProjectAsync(_newProjectName.Trim());
+                _internRequest.ProjectId = proj!.Id;
+                if (_projects.All(p => p!.Id != proj.Id)) _projects.Add(proj);
+                _selectedProjectSelection = proj.Id.ToString();
+            }
+
+            await InternService.AddInternAsync(_internRequest);
             NavigationManager.NavigateTo("/interns");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _serverErrorMessage = ex.Message;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка при добавлении стажера: {ex.Message}");
+            _serverErrorMessage = $"Произошла ошибка: {ex.Message}";
         }
     }
 
-    private void Cancel()
-    {
-        NavigationManager.NavigateTo("/interns");
-    }
+
+    private void Cancel() => NavigationManager.NavigateTo("/interns");
 }

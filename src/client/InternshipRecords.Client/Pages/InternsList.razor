@@ -1,60 +1,111 @@
 ﻿@page "/interns"
 @using InternshipRecords.Client.Services.Intern
+@using InternshipRecords.Client.Services
 @using Shared.Models.Intern
+@using Shared.Models.Direction
+@using Shared.Models.Project
 @inject InternService InternService
+@inject DirectionService DirectionService
+@inject ProjectService ProjectService
 @inject InternSignalRService InternSignalRService
 @inject NavigationManager NavigationManager
 @implements IDisposable
 
-<div class="card">
-    <h3>Список стажеров</h3>
+<div class="page-center">
+    <div class="intern-card p-3">
+        <h3>Список стажеров</h3>
 
-    <div class="filter-section">
-        <input placeholder="Фильтр по проекту" @bind="_filterProjectName" class="form-control" />
-        <input placeholder="Фильтр по направлению" @bind="_filterDirectionName" class="form-control" />
-        <button class="btn" @onclick="ApplyFilter">Применить фильтр</button>
-        <button class="btn" @onclick="LoadInterns">Обновить</button>
-    </div>
+        <div class="filter-section mb-3" style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" class="form-control" style="min-width:220px" placeholder="Поиск по имени или email" @oninput="OnSearchChanged" />
 
-    <div class="interns-list">
-        @foreach (var intern in _filteredInterns)
-        {
-            <div class="intern-card" key="@intern.Id">
-                <strong>@intern.FirstName @intern.LastName</strong>
-                <p>@(intern.Direction?.Name) / @(intern.Project?.Name)</p>
-                <div class="intern-actions">
-                    <button class="btn btn-sm" @onclick="() => EditIntern(intern)">Редактировать</button>
-                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteIntern(intern.Id)">Удалить</button>
+            <select class="form-control" style="min-width:220px" @onchange="OnDirectionFilterChanged">
+                <option value="">Все направления</option>
+                @foreach (var d in _directions)
+                {
+                    @:@d.Id">@d.Name
+                    @:</option>
+                }
+            </select>
+
+            <select class="form-control" style="min-width:220px" @onchange="OnProjectFilterChanged">
+                <option value="">Все проекты</option>
+                @foreach (var p in _projects)
+                {
+                    <option value="@p!.Id">@p.Name</option>
+                }
+            </select>
+
+            <button class="btn btn-primary" @onclick="NavigateToAdd">Добавить стажера</button>
+        </div>
+
+        <div class="interns-list" style="display:flex;flex-direction:column;gap:12px">
+            @foreach (var intern in FilteredInternsPaged)
+            {
+                <div class="intern-card" style="border:1px solid #e6e6e6;border-radius:8px;padding:12px;position:relative;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                        <div>
+                            <div style="font-weight:600;font-size:1.05rem">@intern.FirstName @intern.LastName</div>
+                            <div style="color:#6c757d;font-size:.9rem;margin-top:6px">
+                                <div>@(_directions.FirstOrDefault(d => d.Id == intern.DirectionId)?.Name ?? intern.DirectionId.ToString()) • @(_projects.FirstOrDefault(d => d?.Id == intern.ProjectId)?.Name ?? "-")</div>
+                                <div>@intern.Email</div>
+                                <div>@(intern.Phone ?? "-")</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:6px">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => EditIntern(intern.Id)">Редактировать</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteIntern(intern.Id)">Удалить</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        }
+            }
+        </div>
 
-        @if (_filteredInterns.Count == 0)
+        @if (!_filteredInterns.Any())
         {
-            <p>Стажеры не найдены.</p>
+            <p class="mt-3">Стажеры не найдены.</p>
         }
+        <div class="pagination mt-3">
+            <button class="btn btn-outline" @onclick="PrevPage" disabled="@(_currentPage <= 1)">Назад</button>
+            <span>Страница @_currentPage</span>
+            <button class="btn btn-outline" @onclick="NextPage" disabled="@(!HasNextPage)">Вперед</button>
+            <select @bind="_pageSize" class="form-control page-size" style="width:120px; display:inline-block; margin-left:8px;">
+                <option value="5">5 на странице</option>
+                <option value="10">10 на странице</option>
+                <option value="20">20 на странице</option>
+            </select>
+        </div>
     </div>
 </div>
 
 @code {
     private List<InternDto> _interns = new();
     private List<InternDto> _filteredInterns = new();
-    private string _filterProjectName = "";
-    private string _filterDirectionName = "";
-    public bool IsConnected = false;
-    public string ConnectionStatusText = "Не подключено";
-    public string ConnectionStatusClass = "status-disconnected";
+    private List<DirectionDto> _directions = new();
+    private List<ProjectDto?> _projects = new();
+    private Guid? _filterDirectionId;
+    private Guid? _filterProjectId;
+    private string _searchText = "";
+    private int _currentPage = 1;
+    private int _pageSize = 5;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadLookups();
         await LoadInterns();
         await SetupSignalR();
     }
 
+    private async Task LoadLookups()
+    {
+        _directions = await DirectionService.GetDirectionsAsync();
+        _projects = await ProjectService.GetProjectsAsync();
+    }
+
     private async Task LoadInterns()
     {
-        _interns = await InternService.GetInternsAsync() ?? new List<InternDto>();
+        _interns = await InternService.GetInternsAsync();
         ApplyFilter();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SetupSignalR()
@@ -62,57 +113,102 @@
         InternSignalRService.InternCreated += HandleInternCreated;
         InternSignalRService.InternUpdated += HandleInternUpdated;
         InternSignalRService.InternDeleted += HandleInternDeleted;
-
         await InternSignalRService.StartAsync();
-        IsConnected = true;
     }
 
     private void HandleInternCreated(InternDto intern)
     {
-        _interns.Add(intern);
-        ApplyFilter();
-        StateHasChanged();
+        InvokeAsync(() =>
+        {
+            _interns.Add(intern);
+            ApplyFilter();
+            StateHasChanged();
+        });
     }
 
     private void HandleInternUpdated(InternDto intern)
     {
-        var index = _interns.FindIndex(i => i.Id == intern.Id);
-        if (index < 0) return;
-
-        _interns[index] = intern;
-        ApplyFilter();
-        StateHasChanged();
+        InvokeAsync(() =>
+        {
+            var idx = _interns.FindIndex(i => i.Id == intern.Id);
+            if (idx >= 0) _interns[idx] = intern;
+            else _interns.Add(intern);
+            ApplyFilter();
+            StateHasChanged();
+        });
     }
 
     private void HandleInternDeleted(Guid id)
     {
-        var intern = _interns.FirstOrDefault(i => i.Id == id);
-        if (intern == null) return;
-
-        _interns.Remove(intern);
-        ApplyFilter();
-        StateHasChanged();
+        InvokeAsync(() =>
+        {
+            var item = _interns.FirstOrDefault(i => i.Id == id);
+            if (item != null) _interns.Remove(item);
+            ApplyFilter();
+            StateHasChanged();
+        });
     }
 
     private void ApplyFilter()
     {
-        _filteredInterns = _interns.FindAll(i =>
-            (string.IsNullOrEmpty(_filterProjectName) ||
-             (i.Project?.Name?.Contains(_filterProjectName, StringComparison.OrdinalIgnoreCase) ?? false)) &&
-            (string.IsNullOrEmpty(_filterDirectionName) ||
-             (i.Direction?.Name?.Contains(_filterDirectionName, StringComparison.OrdinalIgnoreCase) ?? false))
-        );
+        _filteredInterns = _interns.Where(i =>
+            (!_filterDirectionId.HasValue || i.DirectionId == _filterDirectionId) &&
+            (!_filterProjectId.HasValue || i.ProjectId == _filterProjectId) &&
+            (string.IsNullOrWhiteSpace(_searchText) ||
+             i.FirstName.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             i.LastName.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+             i.Email.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
     }
 
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        _searchText = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+        ApplyFilter();
+    }
+
+    private void OnDirectionFilterChanged(ChangeEventArgs e)
+    {
+        var v = e.Value?.ToString();
+        _filterDirectionId = Guid.TryParse(v, out var id) ? id : null;
+        _currentPage = 1;
+        ApplyFilter();
+    }
+
+    private void OnProjectFilterChanged(ChangeEventArgs e)
+    {
+        var v = e.Value?.ToString();
+        _filterProjectId = Guid.TryParse(v, out var id) ? id : null;
+        _currentPage = 1;
+        ApplyFilter();
+    }
 
     private async Task DeleteIntern(Guid id)
     {
-        await InternService.DeleteInternAsync(id);
+        try
+        {
+            await InternService.DeleteInternAsync(id);
+            var item = _interns.FirstOrDefault(i => i.Id == id);
+            if (item != null) { _interns.Remove(item); ApplyFilter(); }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при удалении: {ex.Message}");
+        }
     }
 
-    private void EditIntern(InternDto intern)
+    private void EditIntern(Guid id) => NavigationManager.NavigateTo($"/edit-intern/{id}");
+    private void NavigateToAdd() => NavigationManager.NavigateTo("/add-intern");
+    private IEnumerable<InternDto> FilteredInternsPaged
+        => _filteredInterns.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
+
+    private bool HasNextPage => _filteredInterns.Count > _currentPage * _pageSize;
+
+    private void PrevPage() => _currentPage = Math.Max(1, _currentPage - 1);
+    private void NextPage()
     {
-        NavigationManager.NavigateTo($"/edit-intern/{intern.Id}");
+        if (HasNextPage) _currentPage++;
     }
 
     public void Dispose()

@@ -1,24 +1,22 @@
-﻿/* --- Основной контейнер --- */
-.app-container {
+﻿.app-container {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f7fa;
     color: #333;
     min-height: 100vh;
 }
 
-/* --- Шапка --- */
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
-    background: linear-gradient(90deg, #4facfe 0%, #11a3aa 100%);
+    background: linear-gradient(90deg, #4facfe 0, #11a3aa 100%);
+    box-shadow: 0 4px 6px #000000;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     border-bottom-left-radius: 15px;
     border-bottom-right-radius: 15px;
 }
 
-/* --- Лого --- */
 .brand a {
     color: white;
     font-weight: 700;
@@ -26,15 +24,14 @@
     text-decoration: none;
 }
 
-/* --- Навигация --- */
 .app-nav {
     display: flex;
     gap: 1rem;
 }
 
 .nav-link {
-    color: #ffffff; /* белый для контраста с #1fa5be */
-    font-weight: bold; /* жирный текст */
+    color: #ffffff; 
+    font-weight: bold; 
     text-decoration: none;
     padding: 0.5rem 1rem;
     border-radius: 8px;
@@ -42,31 +39,31 @@
 }
 
     .nav-link:hover {
-        color: #1f56be; /* дополнительный эффект при наведении */
+        color: #1f56be;
+        background-color: #ffffff;
         background-color: rgba(255,255,255,0.2);
     }
 
 .nav-link.active {
+    background-color: #ffffff;
     background-color: rgba(255, 255, 255, 0.4);
     color: #fff;
     font-weight: 600;
 }
 
-/* --- Основной контент --- */
 .app-main {
     padding: 2rem;
 }
 
-/* --- Карточки и секции --- */
 .card {
     background: white;
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px #000000;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-/* --- Кнопки --- */
 button {
     background: #4facfe;
     border: none;
@@ -81,7 +78,6 @@ button:hover {
     background: #00f2fe;
 }
 
-/* --- Инпуты --- */
 input, select {
     padding: 0.5rem;
     border-radius: 6px;
@@ -93,5 +89,6 @@ input, select {
 input:focus, select:focus {
     border-color: #4facfe;
     outline: none;
+    box-shadow: 0 0 4px #4facfe;
     box-shadow: 0 0 4px rgba(79,172,254,0.5);
 }
