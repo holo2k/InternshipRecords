@@ -9,7 +9,7 @@ public class AddInternRequest
     public Gender Gender { get; set; }
     public string Email { get; set; } = null!;
     public string? Phone { get; set; }
-    public DateTime BirthDate { get; set; }
+    public DateOnly BirthDate { get; set; }
     public Guid? DirectionId { get; set; }
     public Guid? ProjectId { get; set; }
 }
