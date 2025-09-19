@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using InternshipRecords.Domain.Entities;
-using Shared.Models;
 using Shared.Models.Direction;
 using Shared.Models.Intern;
 using Shared.Models.Project;
@@ -11,12 +10,25 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        CreateMap<Direction, DirectionDto>().ReverseMap();
-        CreateMap<Intern, InternDto>().ReverseMap();
-        CreateMap<Project, ProjectDto>().ReverseMap();
+        CreateMap<Direction, DirectionDto>()
+            .ForMember(dest => dest.Interns, opt => opt.Ignore())
+            .ReverseMap()
+            .ForMember(dest => dest.Interns, opt => opt.Ignore());
 
-        CreateMap<AddInternRequest, Intern>();
-        CreateMap<AddDirectionRequest, Direction>();
-        CreateMap<AddProjectRequest, Project>();
+        CreateMap<Intern, InternDto>()
+            .ForMember(dest => dest.Direction, opt => opt.Ignore())
+            .ForMember(dest => dest.Project, opt => opt.Ignore())
+            .ReverseMap()
+            .ForMember(dest => dest.Direction, opt => opt.Ignore())
+            .ForMember(dest => dest.Project, opt => opt.Ignore());
+
+        CreateMap<Project, ProjectDto>()
+            .ForMember(dest => dest.Interns, opt => opt.Ignore())
+            .ReverseMap()
+            .ForMember(dest => dest.Interns, opt => opt.Ignore());
+
+        CreateMap<AddInternRequest, Intern>().ReverseMap();
+        CreateMap<AddDirectionRequest, Direction>().ReverseMap();
+        CreateMap<AddProjectRequest, Project>().ReverseMap();
     }
 }
