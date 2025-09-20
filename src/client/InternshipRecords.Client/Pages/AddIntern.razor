@@ -1,4 +1,6 @@
 ﻿@page "/add-intern"
+@using System.Text.Json
+@using System.Text.Json.Nodes
 @using InternshipRecords.Client.Services
 @using InternshipRecords.Client.Services.Intern
 @using Shared.Models.Project
@@ -12,10 +14,31 @@
 <div class="page-center">
     <div class="edit-card">
         <h3 class="mb-3">Добавление нового стажера</h3>
+
         @if (!string.IsNullOrWhiteSpace(_serverErrorMessage))
         {
-            <div class="alert alert-danger">@_serverErrorMessage</div>
+            <div class="alert alert-danger">
+                <div><strong>@_serverErrorMessage</strong></div>
+                @if (_serverFieldErrors?.Any() == true)
+                {
+                    <ul class="mt-2 mb-0">
+                        @foreach (var kv in _serverFieldErrors)
+                        {
+                            <li>
+                                <strong>@kv.Key:</strong>
+                                <ul>
+                                    @foreach (var m in kv.Value)
+                                    {
+                                        <li>@m</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
         }
+
         <EditForm Model="_internRequest" OnValidSubmit="HandleValidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
@@ -52,7 +75,7 @@
 
                 <div>
                     <label>Дата рождения</label>
-                    <InputDate @bind-Value="_internRequest.BirthDate" class="form-control"  />
+                    <InputDate @bind-Value="_internRequest.BirthDate" class="form-control" />
                 </div>
 
                 <div>
@@ -60,7 +83,7 @@
                     <InputSelect @bind-Value="SelectedDirectionSelection" class="form-control">
                         <option disabled value="">Выберите направление</option>
                         <option value="__new__">+ Новое направление</option>
-                        @foreach (var d in _directions)
+                        @foreach (var d in _directions.Result)
                         {
                             <option value="@d.Id.ToString()">@d.Name</option>
                         }
@@ -68,8 +91,8 @@
 
                     @if (_showNewDirectionInput)
                     {
-                        <div>
-                            <InputText placeholder="Название" @bind-Value="_newDirectionName" class="form-control" />
+                        <div class="mt-2">
+                            <InputText placeholder="Название" @bind-Value="_newDirectionName" class="form-control mb-1" />
                             <InputText placeholder="Описание" @bind-Value="_newDirectionDescription" class="form-control" />
                         </div>
                     }
@@ -80,23 +103,23 @@
                     <InputSelect @bind-Value="SelectedProjectSelection" class="form-control">
                         <option disabled value="">Выберите проект</option>
                         <option value="__new__">+ Новый проект</option>
-                        @foreach (var p in _projects)
+                        @foreach (var p in _projects.Result)
                         {
-                            <option value="@p?.Id.ToString()">@p?.Name</option>
+                            <option value="@p.Id.ToString()">@p.Name</option>
                         }
                     </InputSelect>
 
                     @if (_showNewProjectInput)
                     {
-                        <div>
-                            <InputText placeholder="Название" @bind-Value="_newProjectName" class="form-control" />
+                        <div class="mt-2">
+                            <InputText placeholder="Название" @bind-Value="_newProjectName" class="form-control mb-1" />
                             <InputText placeholder="Описание" @bind-Value="_newProjectDescription" class="form-control" />
                         </div>
                     }
                 </div>
             </div>
 
-            <div class="form-actions">
+            <div class="form-actions mt-3">
                 <button type="submit" class="btn btn-primary">Сохранить</button>
                 <button type="button" class="btn btn-secondary" @onclick="Cancel">Отмена</button>
             </div>
@@ -104,21 +127,29 @@
     </div>
 </div>
 
-
 @code {
+    // модель запроса
     private readonly AddInternRequest _internRequest = new();
-    private List<DirectionDto> _directions = new();
-    private List<ProjectDto?> _projects = new();
+
+    // сервисы теперь возвращают (Result, Error?) tuples
+    private (List<DirectionDto> Result, string? Error) _directions = (new List<DirectionDto>(), null);
+    private (List<ProjectDto> Result, string? Error) _projects = (new List<ProjectDto>(), null);
+
+    // временные для создания новых direction/project
     private string _newDirectionName = "";
     private string _newProjectName = "";
     private string _newDirectionDescription = "";
     private string _newProjectDescription = "";
 
+    // выбор в селектах
     private string _selectedDirectionSelection = "";
     private string _selectedProjectSelection = "";
     private bool _showNewDirectionInput;
     private bool _showNewProjectInput;
+
+    // серверная ошибка и field-errors
     private string? _serverErrorMessage;
+    private Dictionary<string, string[]>? _serverFieldErrors;
 
     private string SelectedDirectionSelection
     {
@@ -142,8 +173,32 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _directions = await DirectionService.GetDirectionsAsync();
-        _projects = await ProjectService.GetProjectsAsync();
+        // загружаем справочники; сервисы возвращают (result, error)
+        try
+        {
+            _directions = await DirectionService.GetDirectionsAsync();
+        }
+        catch (Exception ex)
+        {
+            // в случае исключения — безопасно показываем сообщение
+            _directions = (new List<DirectionDto>(), $"Ошибка загрузки направлений: {ex.Message}");
+        }
+
+        try
+        {
+            _projects = await ProjectService.GetProjectsAsync();
+        }
+        catch (Exception ex)
+        {
+            _projects = (new List<ProjectDto>(), $"Ошибка загрузки проектов: {ex.Message}");
+        }
+
+        // если есть какие-то ошибки при загрузке — покажем их
+        if (!string.IsNullOrEmpty(_directions.Error))
+            _serverErrorMessage = _directions.Error;
+        else if (!string.IsNullOrEmpty(_projects.Error))
+            _serverErrorMessage = _projects.Error;
+
         _internRequest.BirthDate = DateOnly.FromDateTime(DateTime.Today.AddYears(-18));
     }
 
@@ -187,79 +242,160 @@
 
     private async Task<DirectionDto?> GetOrCreateDirectionAsync(string name)
     {
-        var list = await DirectionService.GetDirectionsAsync();
-        var found = list.FirstOrDefault(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
+        // пробуем найти в локальном списке
+        var found = _directions.Result.FirstOrDefault(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
         if (found != null) return found;
 
-        try
+        // создаём через сервис
+        var (created, error) = await DirectionService.AddDirectionAsync(new AddDirectionRequest { Name = name, Description = _newDirectionDescription });
+        if (!string.IsNullOrEmpty(error))
         {
-            var created = await DirectionService.AddDirectionAsync(new AddDirectionRequest { Name = name, Description = _newDirectionDescription });
-            return created;
+            // пробрасываем ошибку наружу через поле
+            _serverErrorMessage = $"Ошибка при создании направления: {error}";
+            return null;
         }
-        catch
+
+        if (created is null)
         {
-            list = await DirectionService.GetDirectionsAsync();
-            found = list.FirstOrDefault(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (found != null) return found;
-            throw;
+            _serverErrorMessage = "Не удалось создать направление.";
+            return null;
         }
+
+        // обновим локальный кэш
+        _directions.Result.Add(created);
+        return created;
     }
 
     private async Task<ProjectDto?> GetOrCreateProjectAsync(string name)
     {
-        var list = await ProjectService.GetProjectsAsync();
-        var found = list.FirstOrDefault(p => string.Equals(p!.Name, name, StringComparison.OrdinalIgnoreCase));
+        var found = _projects.Result.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
         if (found != null) return found;
 
-        try
+        var (created, error) = await ProjectService.AddProjectAsync(new AddProjectRequest { Name = name, Description = _newProjectDescription });
+        if (!string.IsNullOrEmpty(error))
         {
-            var created = await ProjectService.AddProjectAsync(new AddProjectRequest { Name = name, Description = _newProjectDescription });
-            return created;
+            _serverErrorMessage = $"Ошибка при создании проекта: {error}";
+            return null;
         }
-        catch
+
+        if (created is null)
         {
-            list = await ProjectService.GetProjectsAsync();
-            found = list.FirstOrDefault(p => string.Equals(p!.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (found != null) return found;
-            throw;
+            _serverErrorMessage = "Не удалось создать проект.";
+            return null;
         }
+
+        _projects.Result.Add(created);
+        return created;
     }
 
     private async Task HandleValidSubmit()
     {
+        // сброс предыдущих ошибок
         _serverErrorMessage = null;
+        _serverFieldErrors = null;
 
         try
         {
+            // создать/получить новое направление при необходимости
             if (_showNewDirectionInput && !string.IsNullOrWhiteSpace(_newDirectionName))
             {
                 var dir = await GetOrCreateDirectionAsync(_newDirectionName.Trim());
-                _internRequest.DirectionId = dir!.Id;
-                if (_directions.All(d => d.Id != dir.Id)) _directions.Add(dir);
+                if (dir == null) return; // ошибка уже установлена
+                _internRequest.DirectionId = dir.Id;
                 _selectedDirectionSelection = dir.Id.ToString();
+                _newDirectionName = "";
+                _newDirectionDescription = "";
             }
 
+            // создать/получить новый проект при необходимости
             if (_showNewProjectInput && !string.IsNullOrWhiteSpace(_newProjectName))
             {
                 var proj = await GetOrCreateProjectAsync(_newProjectName.Trim());
-                _internRequest.ProjectId = proj!.Id;
-                if (_projects.All(p => p!.Id != proj.Id)) _projects.Add(proj);
+                if (proj == null) return;
+                _internRequest.ProjectId = proj.Id;
                 _selectedProjectSelection = proj.Id.ToString();
+                _newProjectName = "";
+                _newProjectDescription = "";
             }
 
-            await InternService.AddInternAsync(_internRequest);
-            NavigationManager.NavigateTo("/interns");
-        }
-        catch (InvalidOperationException ex)
-        {
-            _serverErrorMessage = ex.Message;
+            // теперь собственно добавить стажёра
+            try
+            {
+                await InternService.AddInternAsync(_internRequest);
+                NavigationManager.NavigateTo("/interns");
+            }
+            catch (InvalidOperationException invEx)
+            {
+                // internService выбрасывает InvalidOperationException(serverMessage)
+                // попытаемся разобрать JSON и показать понятные ошибки
+                ProcessServerError(invEx.Message);
+            }
+            catch (Exception ex)
+            {
+                _serverErrorMessage = $"Произошла ошибка при сохранении: {ex.Message}";
+            }
         }
         catch (Exception ex)
         {
-            _serverErrorMessage = $"Произошла ошибка: {ex.Message}";
+            // общий catch для unexpected
+            _serverErrorMessage = $"Неожиданная ошибка: {ex.Message}";
         }
     }
 
+    private void ProcessServerError(string serverMessage)
+    {
+        if (string.IsNullOrWhiteSpace(serverMessage))
+        {
+            _serverErrorMessage = "Ошибка сервера (пустой ответ).";
+            return;
+        }
+
+        // пытаемся распарсить JSON вида { message: "...", errors: { "Field": ["err1","err2"] } }
+        try
+        {
+            using var doc = JsonDocument.Parse(serverMessage);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("message", out var msgEl))
+            {
+                _serverErrorMessage = msgEl.GetString();
+            }
+            else
+            {
+                // если нет "message" — положим весь текст
+                _serverErrorMessage = serverMessage;
+            }
+
+            if (root.TryGetProperty("errors", out var errorsEl) && errorsEl.ValueKind == JsonValueKind.Object)
+            {
+                var dict = new Dictionary<string, string[]>();
+                foreach (var prop in errorsEl.EnumerateObject())
+                {
+                    if (prop.Value.ValueKind == JsonValueKind.Array)
+                    {
+                        var list = prop.Value.EnumerateArray().Select(x => x.GetString() ?? "").Where(s => !string.IsNullOrEmpty(s)).ToArray();
+                        dict[prop.Name] = list;
+                    }
+                    else if (prop.Value.ValueKind == JsonValueKind.String)
+                    {
+                        dict[prop.Name] = new[] { prop.Value.GetString() ?? "" };
+                    }
+                    else
+                    {
+                        dict[prop.Name] = new[] { prop.Value.ToString() ?? "" };
+                    }
+                }
+
+                if (dict.Any())
+                    _serverFieldErrors = dict;
+            }
+        }
+        catch
+        {
+            // если не JSON — просто показываем строку
+            _serverErrorMessage = serverMessage;
+        }
+    }
 
     private void Cancel() => NavigationManager.NavigateTo("/interns");
 }

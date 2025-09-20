@@ -39,7 +39,7 @@ public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionComm
             var internsToAssign = await _internRepository.GetManyAsync(request.Direction.InternIds!);
             foreach (var intern in internsToAssign) intern.DirectionId = request.Direction.Id;
 
-            var previously = await _internRepository.GetByProjectIdAsync(request.Direction.Id);
+            var previously = await _internRepository.GetByDirectionIdAsync(request.Direction.Id);
             var toRemove = previously.Where(i => !request.Direction.InternIds!.Contains(i.Id)).ToList();
             foreach (var intern in toRemove) intern.DirectionId = null;
 

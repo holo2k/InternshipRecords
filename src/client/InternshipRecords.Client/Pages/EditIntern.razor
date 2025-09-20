@@ -73,7 +73,7 @@
                         <label>Направление</label>
                         <InputSelect @bind-Value="_internRequest.DirectionId" class="form-control">
                             <option value="">Нет</option>
-                            @foreach (var d in _directions)
+                            @foreach (var d in _directions.Item1)
                             {
                                 <option value="@d.Id">@d.Name</option>
                             }
@@ -84,7 +84,7 @@
                         <label>Проект</label>
                         <InputSelect @bind-Value="_internRequest.ProjectId" class="form-control">
                             <option value="">Нет</option>
-                            @foreach (var p in _projects.Where(p => p != null))
+                            @foreach (var p in _projects.Item1.Where(p => p != null))
                             {
                                 <option value="@p!.Id">@p.Name</option>
                             }
@@ -106,8 +106,8 @@
     private bool _loaded;
     private InternDto _intern = new();
     private readonly UpdateInternRequest _internRequest = new();
-    private List<DirectionDto> _directions = new();
-    private List<ProjectDto?> _projects = new();
+    private (List<DirectionDto>, string?) _directions = new();
+    private (List<ProjectDto>, string?) _projects = new();
     private string? _serverErrorMessage;
 
     protected override async Task OnInitializedAsync()

@@ -71,7 +71,7 @@
     protected override async Task OnInitializedAsync()
     {
         _allInterns = await InternService.GetInternsAsync();
-        var project = (await ProjectService.GetProjectsAsync()).FirstOrDefault(d => d != null && d.Id == Id);
+        var project = (await ProjectService.GetProjectsAsync()).Projects.FirstOrDefault(d => d != null && d.Id == Id);
         _model.Id = Id;
         _model.Name = project?.Name ?? "";
         _model.Description = project?.Description ?? "";
@@ -83,7 +83,7 @@
     {
         _model.InternIds = _selectedInternIds;
         var updated = await ProjectService.UpdateProjectAsync(_model);
-        if (updated != null) NavigationManager.NavigateTo("/directions-projects");
+        if (updated.Project != null) NavigationManager.NavigateTo("/directions-projects");
         else throw new Exception("Возникла ошибка при обновлении направления");
     }
 

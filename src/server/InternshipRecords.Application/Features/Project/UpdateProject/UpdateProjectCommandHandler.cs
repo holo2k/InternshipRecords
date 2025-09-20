@@ -37,11 +37,11 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             await _projectRepository.UpdateAsync(project);
 
             var internsToAssign = await _internRepository.GetManyAsync(request.Project.InternIds!);
-            foreach (var intern in internsToAssign) intern.DirectionId = request.Project.Id;
+            foreach (var intern in internsToAssign) intern.ProjectId = request.Project.Id;
 
             var previously = await _internRepository.GetByProjectIdAsync(request.Project.Id);
             var toRemove = previously.Where(i => !request.Project.InternIds!.Contains(i.Id)).ToList();
-            foreach (var intern in toRemove) intern.DirectionId = null;
+            foreach (var intern in toRemove) intern.ProjectId = null;
 
             await _db.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);

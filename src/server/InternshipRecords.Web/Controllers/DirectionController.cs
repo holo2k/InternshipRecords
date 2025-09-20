@@ -117,8 +117,15 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var result = await _mediator.Send(new DeleteDirectionCommand(id));
-        return Ok(result);
+        try
+        {
+            var result = await _mediator.Send(new DeleteDirectionCommand(id));
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>

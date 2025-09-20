@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using FluentValidation;
 using InternshipRecords.Application.AutoMapper;
+using InternshipRecords.Application.Features.Intern.AddIntern;
 using InternshipRecords.Application.Features.Intern.GetInterns;
 using InternshipRecords.Infrastructure;
 using InternshipRecords.Web.Hub;
@@ -39,6 +40,7 @@ public static class Startup
         services.AddValidatorsFromAssemblyContaining<Program>();
 
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddValidatorsFromAssemblyContaining<AddInternCommandValidator>();
 
         services.AddEndpointsApiExplorer();
 

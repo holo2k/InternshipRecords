@@ -24,62 +24,98 @@ public class ProjectService
         _http = http;
     }
 
-    public async Task<List<ProjectDto?>> GetProjectsAsync(params string[]? queryParams)
+    public async Task<(List<ProjectDto> Projects, string? Error)> GetProjectsAsync(params string[]? queryParams)
     {
         try
         {
             var url = "api/project";
+            if (queryParams is { Length: > 0 })
+            {
+                var queryString = string.Join("&", queryParams.Select(p => $"queryParams={Uri.EscapeDataString(p)}"));
+                url += "?" + queryString;
+            }
 
-            if (queryParams is not { Length: > 0 })
-                return (await _http.GetFromJsonAsync<List<ProjectDto>>(url))!;
-            var queryString = string.Join("&", queryParams.Select(p => $"queryParams={Uri.EscapeDataString(p)}"));
-            url += "?" + queryString;
+            var response = await _http.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
 
-            return (await _http.GetFromJsonAsync<List<ProjectDto>>(url, _options))!;
+            if (response.IsSuccessStatusCode)
+            {
+                var list = JsonSerializer.Deserialize<List<ProjectDto>>(content, _options) ?? new List<ProjectDto>();
+                return (list, null);
+            }
+
+            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
+            return (new List<ProjectDto>(), error?["message"].ToString());
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка при загрузке направлений: {ex.Message}");
-            return new List<ProjectDto?>();
+            return (new List<ProjectDto>(), ex.Message);
         }
     }
 
-    public async Task<ProjectDto?> AddProjectAsync(AddProjectRequest request)
+    public async Task<(ProjectDto? Project, string? Error)> AddProjectAsync(AddProjectRequest request)
     {
         try
         {
             var response = await _http.PostAsJsonAsync("api/project", request);
-            return await response.Content.ReadFromJsonAsync<ProjectDto>(_options);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = JsonSerializer.Deserialize<ProjectDto>(content, _options);
+                return (dto, null);
+            }
+
+            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
+            return (null, error?["message"]?.ToString());
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка при добавлении проекта: {ex.Message}");
-            return null;
+            return (null, ex.Message);
         }
     }
 
-    public async Task<ProjectDto?> UpdateProjectAsync(UpdateProjectRequest request)
+    public async Task<(ProjectDto? Project, string? Error)> UpdateProjectAsync(UpdateProjectRequest request)
     {
         try
         {
             var response = await _http.PatchAsJsonAsync("api/project", request);
-            return await response.Content.ReadFromJsonAsync<ProjectDto>(_options);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = JsonSerializer.Deserialize<ProjectDto>(content, _options);
+                return (dto, null);
+            }
+
+            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
+            return (null, error?["message"]?.ToString());
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка при обновлении проекта: {ex.Message}");
-            return null;
+            return (null, ex.Message);
         }
     }
 
-    public async Task<Guid?> DeleteProjectAsync(Guid id)
+    public async Task<(Guid? DeletedId, string? Error)> DeleteProjectAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"api/project/{id}");
+        try
+        {
+            var response = await _http.DeleteAsync($"api/project/{id}");
+            var content = await response.Content.ReadAsStringAsync();
 
-        if (response.IsSuccessStatusCode) return await response.Content.ReadFromJsonAsync<Guid>(_options);
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = JsonSerializer.Deserialize<Guid>(content, _options);
+                return (dto, null);
+            }
 
-        var error = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(_options);
-        Console.WriteLine($"Ошибка удаления: {error?["message"]}");
-        return null;
+            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
+            return (null, error?["message"]?.ToString());
+        }
+        catch (Exception ex)
+        {
+            return (null, ex.Message);
+        }
     }
 }

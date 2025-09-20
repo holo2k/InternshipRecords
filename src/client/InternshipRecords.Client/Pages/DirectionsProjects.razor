@@ -216,8 +216,8 @@
 
         await Task.WhenAll(directionsTask, projectsTask, internsTask);
 
-        _allDirections = (await directionsTask)!;
-        _allProjects = await projectsTask;
+        _allDirections = (await directionsTask).Directions!;
+        _allProjects = (await projectsTask).Projects!;
         _allInterns = await internsTask;
 
         var comparer = StringComparer.Create(new System.Globalization.CultureInfo("ru-RU"), true);
@@ -293,7 +293,13 @@
 
     private async Task AddDirection()
     {
-        if (string.IsNullOrWhiteSpace(_newDirectionName)) return;
+        _errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_newDirectionName))
+        {
+            _errorMessage = "Название направления не может быть пустым.";
+            return;
+        }
 
         var request = new AddDirectionRequest
         {
@@ -302,16 +308,41 @@
             InternIds = _selectedDirectionInternIds
         };
 
-        await DirectionService.AddDirectionAsync(request);
-        _newDirectionName = "";
-        _newDirectionDescription = "";
-        _selectedDirectionInternIds.Clear();
-        await LoadData();
+        try
+        {
+            var (addedDirection, error) = await DirectionService.AddDirectionAsync(request);
+            if (!string.IsNullOrEmpty(error))
+            {
+                _errorMessage = $"Ошибка при добавлении направления: {error}";
+                return;
+            }
+
+            if (addedDirection is null)
+            {
+                _errorMessage = "Не удалось добавить направление по неизвестной причине.";
+                return;
+            }
+
+            _newDirectionName = "";
+            _newDirectionDescription = "";
+            _selectedDirectionInternIds.Clear();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Системная ошибка при добавлении направления: {ex.Message}";
+        }
     }
 
     private async Task AddProject()
     {
-        if (string.IsNullOrWhiteSpace(_newProjectName)) return;
+        _errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_newProjectName))
+        {
+            _errorMessage = "Название проекта не может быть пустым.";
+            return;
+        }
 
         var request = new AddProjectRequest
         {
@@ -320,56 +351,73 @@
             InternIds = _selectedProjectInternIds
         };
 
-        await ProjectService.AddProjectAsync(request);
-        _newProjectName = "";
-        _newProjectDescription = "";
-        _selectedProjectInternIds.Clear();
-        await LoadData();
+        try
+        {
+            var (addedProject, error) = await ProjectService.AddProjectAsync(request);
+            if (!string.IsNullOrEmpty(error))
+            {
+                _errorMessage = $"Ошибка при добавлении проекта: {error}";
+                return;
+            }
+
+            if (addedProject is null)
+            {
+                _errorMessage = "Не удалось добавить проект.";
+                return;
+            }
+
+            _newProjectName = "";
+            _newProjectDescription = "";
+            _selectedProjectInternIds.Clear();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Системная ошибка при добавлении проекта: {ex.Message}";
+        }
     }
 
     private async Task DeleteDirection(DirectionViewModel direction)
     {
         _errorMessage = null;
-        try
+        var (deletedId, error) = await DirectionService.DeleteDirectionAsync(direction.Direction.Id);
+
+        if (!string.IsNullOrEmpty(error))
         {
-            var deletedId = await DirectionService.DeleteDirectionAsync(direction.Direction.Id);
-            if (deletedId is null)
-            {
-                _errorMessage = "Нельзя удалить направление с прикрепленными стажёрами.";
-            }
-            else
-            {
-                _directionViewModels.Remove(direction);
-                await LoadData();
-            }
+            _errorMessage = error;
+            return;
         }
-        catch (Exception ex)
+
+        if (deletedId is null)
         {
-            _errorMessage = $"Ошибка при удалении направления: {ex.Message}";
+            _errorMessage = "Нельзя удалить направление с прикрепленными стажёрами.";
+            return;
         }
+
+        _directionViewModels.Remove(direction);
+        await LoadData();
     }
 
 
     private async Task DeleteProject(ProjectViewModel project)
     {
         _errorMessage = null;
-        try
+        var (deletedId, error) = await ProjectService.DeleteProjectAsync(project.Project.Id);
+
+        if (!string.IsNullOrEmpty(error))
         {
-            var deletedId = await ProjectService.DeleteProjectAsync(project.Project!.Id);
-            if (deletedId is null)
-            {
-                _errorMessage = "Нельзя удалить проект с прикрепленными стажёрами.";
-            }
-            else
-            {
-                _projectViewModels.Remove(project);
-                await LoadData();
-            }
+            _errorMessage = error;
+            return;
         }
-        catch (Exception ex)
+
+        if (deletedId is null)
         {
-            _errorMessage = $"Ошибка при удалении проекта: {ex.Message}";
+            _errorMessage = "Нельзя удалить проект с прикрепленными стажёрами.";
+            return;
         }
+
+        _projectViewModels.Remove(project);
+        await LoadData();
     }
 
 

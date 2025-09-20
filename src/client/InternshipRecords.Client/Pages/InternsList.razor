@@ -14,27 +14,28 @@
 <div class="page-center">
     <div class="intern-card p-3">
         <h3>Список стажеров</h3>
+
         @if (!string.IsNullOrEmpty(_serverErrorMessage))
         {
             <div class="alert alert-danger">@_serverErrorMessage</div>
         }
+
         <div class="filter-section mb-3" style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="text" class="form-control" style="min-width:220px" placeholder="Поиск по имени или email" @oninput="OnSearchChanged" />
 
             <select class="form-control" style="min-width:220px" @onchange="OnDirectionFilterChanged">
                 <option value="">Все направления</option>
-                @foreach (var d in _directions)
+                @foreach (var d in _directions.Item1 ?? Enumerable.Empty<DirectionDto>())
                 {
-                    @:@d.Id">@d.Name
-                    @:</option>
+                    <option value="@d.Id">@d.Name</option>
                 }
             </select>
 
             <select class="form-control" style="min-width:220px" @onchange="OnProjectFilterChanged">
                 <option value="">Все проекты</option>
-                @foreach (var p in _projects)
+                @foreach (var p in _projects.Item1 ?? Enumerable.Empty<ProjectDto?>())
                 {
-                    <option value="@p!.Id">@p.Name</option>
+                    <option value="@p?.Id">@p?.Name</option>
                 }
             </select>
 
@@ -49,7 +50,11 @@
                         <div>
                             <div style="font-weight:600;font-size:1.05rem">@intern.FirstName @intern.LastName</div>
                             <div style="color:#6c757d;font-size:.9rem;margin-top:6px">
-                                <div>@(_directions.FirstOrDefault(d => d.Id == intern.DirectionId)?.Name ?? intern.DirectionId.ToString()) • @(_projects.FirstOrDefault(d => d?.Id == intern.ProjectId)?.Name ?? "-")</div>
+                                <div>
+                                    @( (_directions.Item1 ?? Enumerable.Empty<DirectionDto>()).FirstOrDefault(d => d.Id == intern.DirectionId)?.Name ?? (intern.DirectionId?.ToString() ?? "-") )
+                                    •
+                                    @( (_projects.Item1 ?? Enumerable.Empty<ProjectDto?>()).FirstOrDefault(p => p?.Id == intern.ProjectId)?.Name ?? "-" )
+                                </div>
                                 <div>@intern.Email</div>
                                 <div>@(intern.Phone ?? "-")</div>
                             </div>
@@ -67,6 +72,7 @@
         {
             <p class="mt-3">Стажеры не найдены.</p>
         }
+
         <div class="pagination mt-3">
             <button class="btn btn-outline" @onclick="PrevPage" disabled="@(_currentPage <= 1)">Назад</button>
             <span>Страница @_currentPage</span>
@@ -83,8 +89,11 @@
 @code {
     private List<InternDto> _interns = new();
     private List<InternDto> _filteredInterns = new();
-    private List<DirectionDto> _directions = new();
-    private List<ProjectDto?> _projects = new();
+
+    // Инициализируем Item1 пустыми списками, чтобы избежать NRE до загрузки данных
+    private (List<DirectionDto> Directions, string? Error) _directions = (new List<DirectionDto>(), null);
+    private (List<ProjectDto?> Projects, string? Error) _projects = (new List<ProjectDto?>(), null);
+
     private Guid? _filterDirectionId;
     private Guid? _filterProjectId;
     private string _searchText = "";
@@ -101,8 +110,13 @@
 
     private async Task LoadLookups()
     {
-        _directions = await DirectionService.GetDirectionsAsync();
-        _projects = await ProjectService.GetProjectsAsync();
+        // DirectionService.GetDirectionsAsync и ProjectService.GetProjectsAsync ожидаются
+        // возвращать (List<T>, string?) — мы безопасно применяем результат.
+        var dirs = await DirectionService.GetDirectionsAsync();
+        _directions = (dirs.Directions ?? new List<DirectionDto>(), dirs.Error);
+
+        var projs = await ProjectService.GetProjectsAsync();
+        _projects = (projs.Projects ?? new List<ProjectDto?>(), projs.Error);
     }
 
     private async Task LoadInterns()
@@ -111,10 +125,15 @@
         try
         {
             _interns = await InternService.GetInternsAsync();
+            ApplyFilter();
         }
         catch (InvalidOperationException ex)
         {
             _serverErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _serverErrorMessage = $"Произошла ошибка загрузки стажёров: {ex.Message}";
         }
     }
 
@@ -206,16 +225,22 @@
         {
             _serverErrorMessage = ex.Message;
         }
+        catch (Exception ex)
+        {
+            _serverErrorMessage = $"Произошла ошибка при удалении: {ex.Message}";
+        }
     }
 
     private void EditIntern(Guid id) => NavigationManager.NavigateTo($"/edit-intern/{id}");
     private void NavigateToAdd() => NavigationManager.NavigateTo("/add-intern");
+
     private IEnumerable<InternDto> FilteredInternsPaged
         => _filteredInterns.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
 
     private bool HasNextPage => _filteredInterns.Count > _currentPage * _pageSize;
 
     private void PrevPage() => _currentPage = Math.Max(1, _currentPage - 1);
+
     private void NextPage()
     {
         if (HasNextPage) _currentPage++;
