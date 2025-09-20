@@ -3,6 +3,7 @@ using InternshipRecords.Application.Features.Intern.DeleteIntern;
 using InternshipRecords.Application.Features.Intern.GetIntern;
 using InternshipRecords.Application.Features.Intern.GetInterns;
 using InternshipRecords.Application.Features.Intern.UpdateIntern;
+using InternshipRecords.Web.Extensions;
 using InternshipRecords.Web.Hub;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -40,9 +41,16 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get(Guid id)
     {
-        var query = new GetInternQuery(id);
-        var intern = await _mediator.Send(query);
-        return Ok(intern);
+        try
+        {
+            var query = new GetInternQuery(id);
+            var intern = await _mediator.Send(query);
+            return Ok(intern);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -58,9 +66,16 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAll([FromQuery] Guid? directionId, [FromQuery] Guid? projectId)
     {
-        var query = new GetInternsQuery(directionId, projectId);
-        var list = await _mediator.Send(query);
-        return Ok(list);
+        try
+        {
+            var query = new GetInternsQuery(directionId, projectId);
+            var list = await _mediator.Send(query);
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -76,10 +91,17 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] AddInternRequest request)
     {
-        var id = await _mediator.Send(new AddInternCommand(request));
-        var created = await _mediator.Send(new GetInternQuery(id));
-        await _hub.Clients.All.SendAsync("InternCreated", created);
-        return Ok(created);
+        try
+        {
+            var id = await _mediator.Send(new AddInternCommand(request));
+            var created = await _mediator.Send(new GetInternQuery(id));
+            await _hub.Clients.All.SendAsync("InternCreated", created);
+            return Ok(created);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -96,10 +118,17 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update([FromBody] UpdateInternRequest request)
     {
-        var id = await _mediator.Send(new UpdateInternCommand(request));
-        var updated = await _mediator.Send(new GetInternQuery(id));
-        await _hub.Clients.All.SendAsync("InternUpdated", updated);
-        return Ok(updated);
+        try
+        {
+            var id = await _mediator.Send(new UpdateInternCommand(request));
+            var updated = await _mediator.Send(new GetInternQuery(id));
+            await _hub.Clients.All.SendAsync("InternUpdated", updated);
+            return Ok(updated);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -114,8 +143,15 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _mediator.Send(new DeleteInternCommand(id));
-        await _hub.Clients.All.SendAsync("InternDeleted", id);
-        return Ok();
+        try
+        {
+            await _mediator.Send(new DeleteInternCommand(id));
+            await _hub.Clients.All.SendAsync("InternDeleted", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 }

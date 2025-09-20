@@ -25,39 +25,39 @@ public class InternService
 
     public async Task<InternDto> GetInternAsync(Guid internId)
     {
-        try
-        {
-            var url = $"api/intern/{internId}";
-            return await _http.GetFromJsonAsync<InternDto>(url, _options) ?? new InternDto();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка при загрузке стажера: {ex.Message}");
-            return new InternDto();
-        }
+        var url = $"api/intern/{internId}";
+        var response = await _http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<InternDto>(_options) ?? new InternDto();
+
+        var serverMessage = await response.Content.ReadAsStringAsync();
+        throw new InvalidOperationException(serverMessage);
     }
 
     public async Task<List<InternDto>> GetInternsAsync(Guid? directionId = null, Guid? projectId = null)
     {
-        try
-        {
-            var qs = new List<string>();
-            if (directionId.HasValue) qs.Add($"directionId={directionId}");
-            if (projectId.HasValue) qs.Add($"projectId={projectId}");
-            var url = "api/intern" + (qs.Any() ? "?" + string.Join("&", qs) : "");
-            return await _http.GetFromJsonAsync<List<InternDto>>(url, _options) ?? new List<InternDto>();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка при загрузке стажеров: {ex.Message}");
-            return new List<InternDto>();
-        }
+        var qs = new List<string>();
+        if (directionId.HasValue) qs.Add($"directionId={directionId}");
+        if (projectId.HasValue) qs.Add($"projectId={projectId}");
+        var url = "api/intern" + (qs.Any() ? "?" + string.Join("&", qs) : "");
+
+        var response = await _http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<List<InternDto>>(_options) ?? new List<InternDto>();
+
+        var serverMessage = await response.Content.ReadAsStringAsync();
+        throw new InvalidOperationException(serverMessage);
     }
 
     public async Task<InternDto?> AddInternAsync(AddInternRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/intern", request, _options);
-        if (response.IsSuccessStatusCode) return await response.Content.ReadFromJsonAsync<InternDto>(_options);
+
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<InternDto>(_options);
+
         var serverMessage = await response.Content.ReadAsStringAsync();
         throw new InvalidOperationException(serverMessage);
     }
@@ -65,6 +65,12 @@ public class InternService
     public async Task DeleteInternAsync(Guid id)
     {
         var response = await _http.DeleteAsync($"api/intern/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var serverMessage = await response.Content.ReadAsStringAsync();
+            throw new InvalidOperationException(serverMessage);
+        }
     }
 
     public async Task<InternDto?> UpdateInternAsync(UpdateInternRequest request)
@@ -73,7 +79,13 @@ public class InternService
         {
             Content = JsonContent.Create(request, options: _options)
         };
+
         var response = await _http.SendAsync(msg);
-        return await response.Content.ReadFromJsonAsync<InternDto>(_options);
+
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<InternDto>(_options);
+
+        var serverMessage = await response.Content.ReadAsStringAsync();
+        throw new InvalidOperationException(serverMessage);
     }
 }

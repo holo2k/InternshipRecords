@@ -73,17 +73,14 @@ public class DirectionService
         }
     }
 
-    public async Task<Guid> DeleteDirectionAsync(Guid id)
+    public async Task<Guid?> DeleteDirectionAsync(Guid id)
     {
-        try
-        {
-            var response = await _http.DeleteAsync($"api/direction/{id}");
-            return await response.Content.ReadFromJsonAsync<Guid>();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка при удалении направления: {ex.Message}");
-            return Guid.Empty;
-        }
+        var response = await _http.DeleteAsync($"api/direction/{id}");
+
+        if (response.IsSuccessStatusCode) return await response.Content.ReadFromJsonAsync<Guid>(_options);
+
+        var error = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(_options);
+        Console.WriteLine($"Ошибка удаления: {error?["message"]}");
+        return null;
     }
 }

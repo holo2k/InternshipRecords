@@ -14,7 +14,10 @@
 <div class="page-center">
     <div class="intern-card p-3">
         <h3>Список стажеров</h3>
-
+        @if (!string.IsNullOrEmpty(_serverErrorMessage))
+        {
+            <div class="alert alert-danger">@_serverErrorMessage</div>
+        }
         <div class="filter-section mb-3" style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="text" class="form-control" style="min-width:220px" placeholder="Поиск по имени или email" @oninput="OnSearchChanged" />
 
@@ -87,6 +90,7 @@
     private string _searchText = "";
     private int _currentPage = 1;
     private int _pageSize = 5;
+    private string? _serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,9 +107,15 @@
 
     private async Task LoadInterns()
     {
-        _interns = await InternService.GetInternsAsync();
-        ApplyFilter();
-        await InvokeAsync(StateHasChanged);
+        _serverErrorMessage = null;
+        try
+        {
+            _interns = await InternService.GetInternsAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _serverErrorMessage = ex.Message;
+        }
     }
 
     private async Task SetupSignalR()
@@ -186,15 +196,15 @@
 
     private async Task DeleteIntern(Guid id)
     {
+        _serverErrorMessage = null;
         try
         {
             await InternService.DeleteInternAsync(id);
-            var item = _interns.FirstOrDefault(i => i.Id == id);
-            if (item != null) { _interns.Remove(item); ApplyFilter(); }
+            await LoadInterns();
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
-            Console.WriteLine($"Ошибка при удалении: {ex.Message}");
+            _serverErrorMessage = ex.Message;
         }
     }
 

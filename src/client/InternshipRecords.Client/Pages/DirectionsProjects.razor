@@ -333,9 +333,9 @@
         try
         {
             var deletedId = await DirectionService.DeleteDirectionAsync(direction.Direction.Id);
-            if (deletedId == Guid.Empty)
+            if (deletedId is null)
             {
-                _errorMessage = "Нельзя удалить проект с прикрепленными стажёрами.";
+                _errorMessage = "Нельзя удалить направление с прикрепленными стажёрами.";
             }
             else
             {
@@ -345,9 +345,10 @@
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Ошибка при удалении проекта: {ex.Message}";
+            _errorMessage = $"Ошибка при удалении направления: {ex.Message}";
         }
     }
+
 
     private async Task DeleteProject(ProjectViewModel project)
     {
@@ -355,8 +356,7 @@
         try
         {
             var deletedId = await ProjectService.DeleteProjectAsync(project.Project!.Id);
-            Console.WriteLine(deletedId);
-            if (deletedId == Guid.Empty)
+            if (deletedId is null)
             {
                 _errorMessage = "Нельзя удалить проект с прикрепленными стажёрами.";
             }

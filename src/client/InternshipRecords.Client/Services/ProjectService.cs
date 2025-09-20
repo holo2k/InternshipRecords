@@ -72,17 +72,14 @@ public class ProjectService
         }
     }
 
-    public async Task<Guid> DeleteProjectAsync(Guid id)
+    public async Task<Guid?> DeleteProjectAsync(Guid id)
     {
-        try
-        {
-            var response = await _http.DeleteAsync($"api/project/{id}");
-            return await response.Content.ReadFromJsonAsync<Guid>();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка при удалении проекта: {ex.Message}");
-            return Guid.Empty;
-        }
+        var response = await _http.DeleteAsync($"api/project/{id}");
+
+        if (response.IsSuccessStatusCode) return await response.Content.ReadFromJsonAsync<Guid>(_options);
+
+        var error = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(_options);
+        Console.WriteLine($"Ошибка удаления: {error?["message"]}");
+        return null;
     }
 }

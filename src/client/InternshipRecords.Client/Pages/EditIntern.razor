@@ -19,6 +19,11 @@
         }
         else
         {
+            @if (!string.IsNullOrEmpty(_serverErrorMessage))
+            {
+                <div class="alert alert-danger">@_serverErrorMessage</div>
+            }
+
             <EditForm Model="_internRequest" OnValidSubmit="HandleValidSubmit">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
@@ -70,8 +75,7 @@
                             <option value="">Нет</option>
                             @foreach (var d in _directions)
                             {
-                                @:@d.Id">@d.Name
-                                @:</option>
+                                <option value="@d.Id">@d.Name</option>
                             }
                         </InputSelect>
                     </div>
@@ -80,14 +84,9 @@
                         <label>Проект</label>
                         <InputSelect @bind-Value="_internRequest.ProjectId" class="form-control">
                             <option value="">Нет</option>
-                            @foreach (var p in _projects)
+                            @foreach (var p in _projects.Where(p => p != null))
                             {
-                                
-                                if (p != null)
-                                {
-                                    @:@p.Id">@p.Name
-                                }
-                                @:</option>
+                                <option value="@p!.Id">@p.Name</option>
                             }
                         </InputSelect>
                     </div>
@@ -109,6 +108,7 @@
     private readonly UpdateInternRequest _internRequest = new();
     private List<DirectionDto> _directions = new();
     private List<ProjectDto?> _projects = new();
+    private string? _serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -142,14 +142,19 @@
 
     private async Task HandleValidSubmit()
     {
+        _serverErrorMessage = null;
         try
         {
             await InternService.UpdateInternAsync(_internRequest);
             NavigationManager.NavigateTo("/interns");
         }
+        catch (InvalidOperationException ex)
+        {
+            _serverErrorMessage = ex.Message;
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка при обновлении стажера: {ex.Message}");
+            _serverErrorMessage = "Произошла ошибка при сохранении: " + ex.Message;
         }
     }
 

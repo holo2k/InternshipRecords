@@ -48,7 +48,7 @@ public class ProjectRepository : IProjectRepository
             throw new KeyNotFoundException($"Проект с ID {id} не найден");
 
         if (existing.Interns.Any())
-            return Guid.Empty;
+            throw new InvalidOperationException("Невозможно удалить проект с привязанными стажерами");
 
         _appDbContext.Projects.Remove(existing);
         await _appDbContext.SaveChangesAsync();

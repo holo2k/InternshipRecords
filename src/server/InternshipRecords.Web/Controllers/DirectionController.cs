@@ -3,6 +3,7 @@ using InternshipRecords.Application.Features.Direction.AttachInternsToDirection;
 using InternshipRecords.Application.Features.Direction.DeleteDirection;
 using InternshipRecords.Application.Features.Direction.GetDirections;
 using InternshipRecords.Application.Features.Direction.UpdateDirection;
+using InternshipRecords.Web.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Models.Direction;
@@ -37,13 +38,19 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAll([FromQuery] string[] queryParams)
     {
-        var query = new GetDirectionsQuery
+        try
         {
-            QueryParams = queryParams
-        };
-
-        var result = await _mediator.Send(query);
-        return Ok(result);
+            var query = new GetDirectionsQuery
+            {
+                QueryParams = queryParams
+            };
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -58,9 +65,16 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] AddDirectionRequest request)
     {
-        var command = new AddDirectionCommand(request);
-        var result = await _mediator.Send(command);
-        return Ok(result);
+        try
+        {
+            var command = new AddDirectionCommand(request);
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -76,9 +90,16 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update([FromBody] UpdateDirectionRequest request)
     {
-        var command = new UpdateDirectionCommand(request);
-        var result = await _mediator.Send(command);
-        return Ok(result);
+        try
+        {
+            var command = new UpdateDirectionCommand(request);
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -114,7 +135,14 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AttachInterns([FromBody] AttachInternsToDirectionCommand command)
     {
-        var result = await _mediator.Send(command);
-        return Ok(result);
+        try
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
     }
 }

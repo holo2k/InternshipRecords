@@ -19,7 +19,7 @@ public class GetInternQueryHandler : IRequestHandler<GetInternQuery, InternDto>
     public async Task<InternDto> Handle(GetInternQuery request, CancellationToken cancellationToken)
     {
         var intern = await _internRepository.GetByIdAsync(request.Id) ??
-                     throw new InvalidOperationException("Такого интерна не существует");
+                     throw new KeyNotFoundException("Такого интерна не существует");
         return _mapper.Map<InternDto>(intern);
     }
 }
