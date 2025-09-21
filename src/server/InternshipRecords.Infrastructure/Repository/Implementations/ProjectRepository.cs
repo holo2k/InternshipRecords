@@ -59,8 +59,9 @@ public class ProjectRepository : IProjectRepository
     public async Task<Project?> GetByIdAsync(Guid id)
     {
         return await _appDbContext.Projects
-            .Include(p => p.Interns)
-            .FirstOrDefaultAsync(p => p.Id == id);
+                   .Include(p => p.Interns)
+                   .FirstOrDefaultAsync(p => p.Id == id)
+               ?? throw new KeyNotFoundException($"Не найден проект с ID {id}");
     }
 
     public async Task<ICollection<Project>> GetAllAsync(params string[] queryParams)

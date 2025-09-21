@@ -2,6 +2,7 @@
 using InternshipRecords.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Shared.Models;
 
 namespace InternshipRecords.Web.Startup;
 
@@ -17,15 +18,11 @@ public static class WebAppExtensions
                 var exception = exceptionFeature?.Error;
 
                 context.Response.ContentType = "application/json";
+
+                var result = MbResult<object>.Fail(new MbError("InternalServerError", exception!.Message));
+
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-
-                var errorResponse = new
-                {
-                    code = "InternalServerError",
-                    message = exception?.Message ?? "An unexpected error occurred."
-                };
-
-                var json = JsonSerializer.Serialize(errorResponse);
+                var json = JsonSerializer.Serialize(result);
                 await context.Response.WriteAsync(json);
             });
         });

@@ -1,3 +1,5 @@
+using Serilog;
+
 namespace InternshipRecords.Web;
 
 public class Program
@@ -7,6 +9,8 @@ public class Program
         var builder = WebApplication.CreateBuilder();
 
         Startup.Startup.ConfigureServices(builder.Services, builder.Configuration);
+
+        builder.Host.UseSerilog();
 
         var app = builder.Build();
 

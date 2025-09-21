@@ -27,7 +27,7 @@ public class DirectionRepository : IDirectionRepository
             .FirstOrDefaultAsync(d => d.Id == direction.Id);
 
         if (existing == null)
-            throw new KeyNotFoundException($"Direction with id {direction.Id} not found");
+            throw new KeyNotFoundException($"Направление с ID {direction.Id} не найдено");
 
         existing.Name = direction.Name;
         existing.Description = direction.Description;
@@ -46,7 +46,7 @@ public class DirectionRepository : IDirectionRepository
             .FirstOrDefaultAsync(d => d.Id == id);
 
         if (existing == null)
-            throw new KeyNotFoundException($"Direction with id {id} not found");
+            throw new KeyNotFoundException($"Направление с ID {id} не найдено");
 
         if (existing.Interns.Any())
             throw new InvalidOperationException("Невозможно удалить проект с привязанными стажерами");
@@ -76,28 +76,6 @@ public class DirectionRepository : IDirectionRepository
             query = query.OrderByDescending(d => d.Interns.Count);
 
         return await query.ToListAsync();
-    }
-
-    public async Task AttachInternsAsync(Guid directionId, Guid[] internIds)
-    {
-        var direction = await _appDbContext.Directions
-            .Include(d => d.Interns)
-            .FirstOrDefaultAsync(d => d.Id == directionId);
-
-        if (direction == null)
-            throw new KeyNotFoundException($"Direction with id {directionId} not found");
-
-        var interns = await _appDbContext.Interns
-            .Where(i => internIds.Contains(i.Id))
-            .ToListAsync();
-
-        foreach (var intern in interns.Where(intern => !direction.Interns.Contains(intern)))
-        {
-            direction.Interns.Add(intern);
-            intern.DirectionId = directionId;
-        }
-
-        await _appDbContext.SaveChangesAsync();
     }
 
     public Task SaveAsync()

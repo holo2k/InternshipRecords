@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models;
 using Shared.Models.Project;
 
 namespace InternshipRecords.Application.Features.Project.GetProjects;
 
-public class GetProjectsQueryHandler : IRequestHandler<GetProjectsQuery, ICollection<ProjectDto>>
+public class GetProjectsQueryHandler : IRequestHandler<GetProjectsQuery, MbResult<ICollection<ProjectDto>>>
 {
     private readonly IMapper _mapper;
     private readonly IProjectRepository _projectRepository;
@@ -16,9 +17,17 @@ public class GetProjectsQueryHandler : IRequestHandler<GetProjectsQuery, ICollec
         _mapper = mapper;
     }
 
-    public async Task<ICollection<ProjectDto>> Handle(GetProjectsQuery request, CancellationToken cancellationToken)
+    public async Task<MbResult<ICollection<ProjectDto>>> Handle(GetProjectsQuery request,
+        CancellationToken cancellationToken)
     {
-        var projects = await _projectRepository.GetAllAsync(request.QueryParams);
-        return _mapper.Map<ICollection<ProjectDto>>(projects);
+        try
+        {
+            var projects = await _projectRepository.GetAllAsync(request.QueryParams);
+            return MbResult<ICollection<ProjectDto>>.Success(_mapper.Map<ICollection<ProjectDto>>(projects));
+        }
+        catch (Exception ex)
+        {
+            return MbResult<ICollection<ProjectDto>>.Fail(new MbError("Неизвестное исключение", ex.Message));
+        }
     }
 }

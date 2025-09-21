@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models;
 using Shared.Models.Direction;
 
 namespace InternshipRecords.Application.Features.Direction.GetDirections;
 
-public class GetDirectionsQueryHandler : IRequestHandler<GetDirectionsQuery, ICollection<DirectionDto>>
+public class GetDirectionsQueryHandler : IRequestHandler<GetDirectionsQuery, MbResult<ICollection<DirectionDto>>>
 {
     private readonly IDirectionRepository _directionRepository;
     private readonly IMapper _mapper;
@@ -16,9 +17,18 @@ public class GetDirectionsQueryHandler : IRequestHandler<GetDirectionsQuery, ICo
         _mapper = mapper;
     }
 
-    public async Task<ICollection<DirectionDto>> Handle(GetDirectionsQuery request, CancellationToken cancellationToken)
+    public async Task<MbResult<ICollection<DirectionDto>>> Handle(GetDirectionsQuery request,
+        CancellationToken cancellationToken)
     {
-        var directions = await _directionRepository.GetAllAsync(request.QueryParams);
-        return _mapper.Map<ICollection<DirectionDto>>(directions);
+        try
+        {
+            var directions = await _directionRepository.GetAllAsync(request.QueryParams);
+            var result = _mapper.Map<ICollection<DirectionDto>>(directions);
+            return MbResult<ICollection<DirectionDto>>.Success(result);
+        }
+        catch (Exception ex)
+        {
+            return MbResult<ICollection<DirectionDto>>.Fail(new MbError("Неизвестная ошибка", ex.Message));
+        }
     }
 }

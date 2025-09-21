@@ -1,6 +1,9 @@
-﻿using System.Net.Http.Json;
+﻿// InternService.cs
+
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using InternshipRecords.Client.Helpers;
 using Shared.Models.Intern;
 
 namespace InternshipRecords.Client.Services.Intern;
@@ -23,16 +26,22 @@ public class InternService
         _http = http;
     }
 
+
     public async Task<InternDto> GetInternAsync(Guid internId)
     {
         var url = $"api/intern/{internId}";
         var response = await _http.GetAsync(url);
+        var mb = await MbResultReader.ReadMbResultAsync<InternDto>(response, _options);
 
-        if (response.IsSuccessStatusCode)
-            return await response.Content.ReadFromJsonAsync<InternDto>(_options) ?? new InternDto();
+        if (mb.IsSuccess) return mb.Result ?? new InternDto();
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
 
-        var serverMessage = await response.Content.ReadAsStringAsync();
-        throw new InvalidOperationException(serverMessage);
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 
     public async Task<List<InternDto>> GetInternsAsync(Guid? directionId = null, Guid? projectId = null)
@@ -43,34 +52,52 @@ public class InternService
         var url = "api/intern" + (qs.Any() ? "?" + string.Join("&", qs) : "");
 
         var response = await _http.GetAsync(url);
+        var mb = await MbResultReader.ReadMbResultAsync<List<InternDto>>(response, _options);
 
-        if (response.IsSuccessStatusCode)
-            return await response.Content.ReadFromJsonAsync<List<InternDto>>(_options) ?? new List<InternDto>();
+        if (mb!.IsSuccess) return mb.Result ?? new List<InternDto>();
 
-        var serverMessage = await response.Content.ReadAsStringAsync();
-        throw new InvalidOperationException(serverMessage);
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
+
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 
     public async Task<InternDto?> AddInternAsync(AddInternRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/intern", request, _options);
 
-        if (response.IsSuccessStatusCode)
-            return await response.Content.ReadFromJsonAsync<InternDto>(_options);
+        var mb = await MbResultReader.ReadMbResultAsync<InternDto>(response, _options);
 
-        var serverMessage = await response.Content.ReadAsStringAsync();
-        throw new InvalidOperationException(serverMessage);
+        if (mb.IsSuccess) return mb.Result;
+
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
+
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 
     public async Task DeleteInternAsync(Guid id)
     {
         var response = await _http.DeleteAsync($"api/intern/{id}");
+        var mb = await MbResultReader.ReadMbResultAsync<Guid?>(response, _options);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            var serverMessage = await response.Content.ReadAsStringAsync();
-            throw new InvalidOperationException(serverMessage);
-        }
+        if (mb.IsSuccess) return;
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
+
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 
     public async Task<InternDto?> UpdateInternAsync(UpdateInternRequest request)
@@ -81,11 +108,16 @@ public class InternService
         };
 
         var response = await _http.SendAsync(msg);
+        var mb = await MbResultReader.ReadMbResultAsync<InternDto>(response, _options);
 
-        if (response.IsSuccessStatusCode)
-            return await response.Content.ReadFromJsonAsync<InternDto>(_options);
+        if (mb.IsSuccess) return mb.Result;
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
 
-        var serverMessage = await response.Content.ReadAsStringAsync();
-        throw new InvalidOperationException(serverMessage);
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 }

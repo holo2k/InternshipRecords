@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using AccountService.Startup.Middleware;
 using FluentValidation;
 using InternshipRecords.Application.AutoMapper;
 using InternshipRecords.Application.Features.Intern.AddIntern;
@@ -16,6 +17,8 @@ public static class Startup
     public static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpClient();
+
+        services.AddLogger();
 
         var connection = configuration.GetConnectionString("DefaultConnection");
 
@@ -52,6 +55,10 @@ public static class Startup
     public static async Task ConfigureAppAsync(WebApplication app)
     {
         await app.MigrateDatabaseAsync();
+
+        app.UseMiddleware<RequestLoggingMiddleware>();
+
+        app.AddExceptionHandler();
 
         app.UseRouting();
 

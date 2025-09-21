@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models;
 using Shared.Models.Project;
 
 namespace InternshipRecords.Application.Features.Project.AddProject;
 
-public class AddProjectCommandHandler : IRequestHandler<AddProjectCommand, ProjectDto>
+public class AddProjectCommandHandler : IRequestHandler<AddProjectCommand, MbResult<ProjectDto>>
 {
     private readonly IInternRepository _internRepository;
     private readonly IMapper _mapper;
@@ -21,20 +22,27 @@ public class AddProjectCommandHandler : IRequestHandler<AddProjectCommand, Proje
         _mapper = mapper;
     }
 
-    public async Task<ProjectDto> Handle(AddProjectCommand request, CancellationToken cancellationToken)
+    public async Task<MbResult<ProjectDto>> Handle(AddProjectCommand request, CancellationToken cancellationToken)
     {
-        var entity = _mapper.Map<Domain.Entities.Project>(request.Project);
-        entity.CreatedAt = DateTime.UtcNow;
-        entity.UpdatedAt = DateTime.UtcNow;
-
-        if (request.Project.InternIds.Any())
+        try
         {
-            var interns = await _internRepository.GetManyAsync(request.Project.InternIds);
-            entity.Interns = interns.ToList();
+            var entity = _mapper.Map<Domain.Entities.Project>(request.Project);
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.UpdatedAt = DateTime.UtcNow;
+
+            if (request.Project.InternIds.Any())
+            {
+                var interns = await _internRepository.GetManyAsync(request.Project.InternIds);
+                entity.Interns = interns.ToList();
+            }
+
+            await _projectRepository.CreateAsync(entity);
+
+            return MbResult<ProjectDto>.Success(_mapper.Map<ProjectDto>(entity));
         }
-
-        await _projectRepository.CreateAsync(entity);
-
-        return _mapper.Map<ProjectDto>(entity);
+        catch (Exception ex)
+        {
+            return MbResult<ProjectDto>.Fail(new MbError("Неизвестное исключение", ex.Message));
+        }
     }
 }

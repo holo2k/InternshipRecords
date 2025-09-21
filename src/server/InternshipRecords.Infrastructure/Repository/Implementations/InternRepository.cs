@@ -59,12 +59,14 @@ public class InternRepository : IInternRepository
         return id;
     }
 
-    public async Task<Intern?> GetByIdAsync(Guid id)
+    public async Task<Intern> GetByIdAsync(Guid id)
     {
-        return await _appDbContext.Interns
-            .Include(i => i.Direction)
-            .Include(i => i.Project)
-            .FirstOrDefaultAsync(i => i.Id == id);
+        var intern = await _appDbContext.Interns
+                         .Include(i => i.Direction)
+                         .Include(i => i.Project)
+                         .FirstOrDefaultAsync(i => i.Id == id)
+                     ?? throw new KeyNotFoundException($"Стажёр с ID {id} не найден");
+        return intern;
     }
 
     public async Task<ICollection<Intern>> GetAllAsync(Guid? directionId, Guid? projectId)

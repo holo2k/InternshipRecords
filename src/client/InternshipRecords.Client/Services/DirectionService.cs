@@ -1,6 +1,9 @@
-﻿using System.Net.Http.Json;
+﻿// DirectionService.cs
+
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using InternshipRecords.Client.Helpers;
 using Shared.Models.Direction;
 using Shared.Models.Project;
 
@@ -24,6 +27,7 @@ public class DirectionService
         _http = http;
     }
 
+
     public async Task<(List<DirectionDto> Directions, string? Error)> GetDirectionsAsync(params string[]? queryParams)
     {
         try
@@ -36,17 +40,11 @@ public class DirectionService
             }
 
             var response = await _http.GetAsync(url);
-            var content = await response.Content.ReadAsStringAsync();
+            var mb = await MbResultReader.ReadMbResultAsync<List<DirectionDto>>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var list = JsonSerializer.Deserialize<List<DirectionDto>>(content, _options) ??
-                           new List<DirectionDto>();
-                return (list, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (new List<DirectionDto>(), error?["message"].ToString());
+            return mb.IsSuccess
+                ? (mb.Result ?? new List<DirectionDto>(), null)
+                : (new List<DirectionDto>(), mb.Error?.Message);
         }
         catch (Exception ex)
         {
@@ -58,17 +56,11 @@ public class DirectionService
     {
         try
         {
-            var response = await _http.PostAsJsonAsync("api/direction", request);
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await _http.PostAsJsonAsync("api/direction", request, _options);
+            var mb = await MbResultReader.ReadMbResultAsync<DirectionDto>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var dto = JsonSerializer.Deserialize<DirectionDto>(content, _options);
-                return (dto, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"].ToString());
+            if (mb.IsSuccess) return (mb.Result, null);
+            return (null, mb.Error?.Message);
         }
         catch (Exception ex)
         {
@@ -80,17 +72,11 @@ public class DirectionService
     {
         try
         {
-            var response = await _http.PatchAsJsonAsync("api/direction", request);
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await _http.PatchAsJsonAsync("api/direction", request, _options);
+            var mb = await MbResultReader.ReadMbResultAsync<DirectionDto>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var dto = JsonSerializer.Deserialize<DirectionDto>(content, _options);
-                return (dto, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"].ToString());
+            if (mb.IsSuccess) return (mb.Result, null);
+            return (null, mb.Error?.Message);
         }
         catch (Exception ex)
         {
@@ -103,16 +89,10 @@ public class DirectionService
         try
         {
             var response = await _http.DeleteAsync($"api/direction/{id}");
-            var content = await response.Content.ReadAsStringAsync();
+            var mb = await MbResultReader.ReadMbResultAsync<Guid>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var dto = JsonSerializer.Deserialize<Guid>(content, _options);
-                return (dto, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"].ToString());
+            if (mb.IsSuccess) return (mb.Result, null);
+            return (null, mb.Error?.Message);
         }
         catch (Exception ex)
         {

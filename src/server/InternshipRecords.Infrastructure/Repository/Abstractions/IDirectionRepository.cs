@@ -9,6 +9,5 @@ public interface IDirectionRepository
     Task<Guid> DeleteAsync(Guid id);
     Task<Direction?> GetByIdAsync(Guid id);
     Task<ICollection<Direction>> GetAllAsync(params string[] queryParams);
-    Task AttachInternsAsync(Guid directionId, Guid[] internIds);
     Task SaveAsync();
 }

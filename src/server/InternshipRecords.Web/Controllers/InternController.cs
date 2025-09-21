@@ -41,16 +41,9 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get(Guid id)
     {
-        try
-        {
-            var query = new GetInternQuery(id);
-            var intern = await _mediator.Send(query);
-            return Ok(intern);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var query = new GetInternQuery(id);
+        var intern = await _mediator.Send(query);
+        return this.FromResult(intern);
     }
 
     /// <summary>
@@ -66,16 +59,9 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAll([FromQuery] Guid? directionId, [FromQuery] Guid? projectId)
     {
-        try
-        {
-            var query = new GetInternsQuery(directionId, projectId);
-            var list = await _mediator.Send(query);
-            return Ok(list);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var query = new GetInternsQuery(directionId, projectId);
+        var list = await _mediator.Send(query);
+        return this.FromResult(list);
     }
 
     /// <summary>
@@ -91,18 +77,13 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] AddInternRequest request)
     {
-        try
-        {
-            var id = await _mediator.Send(new AddInternCommand(request));
-            var created = await _mediator.Send(new GetInternQuery(id));
-            await _hub.Clients.All.SendAsync("InternCreated", created);
-            return Ok(created);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var created = await _mediator.Send(new AddInternCommand(request));
+
+        await _hub.Clients.All.SendAsync("InternCreated", created.Result);
+
+        return this.FromResult(created);
     }
+
 
     /// <summary>
     ///     Обновить существующего стажёра.
@@ -118,17 +99,12 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update([FromBody] UpdateInternRequest request)
     {
-        try
-        {
-            var id = await _mediator.Send(new UpdateInternCommand(request));
-            var updated = await _mediator.Send(new GetInternQuery(id));
-            await _hub.Clients.All.SendAsync("InternUpdated", updated);
-            return Ok(updated);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var id = await _mediator.Send(new UpdateInternCommand(request));
+        if (id.Error != null)
+            return this.FromResult(id);
+        var updated = await _mediator.Send(new GetInternQuery(id.Result));
+        await _hub.Clients.All.SendAsync("InternUpdated", updated);
+        return this.FromResult(updated);
     }
 
     /// <summary>
@@ -143,15 +119,8 @@ public class InternController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            await _mediator.Send(new DeleteInternCommand(id));
-            await _hub.Clients.All.SendAsync("InternDeleted", id);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var result = await _mediator.Send(new DeleteInternCommand(id));
+        await _hub.Clients.All.SendAsync("InternDeleted", id);
+        return this.FromResult(result);
     }
 }

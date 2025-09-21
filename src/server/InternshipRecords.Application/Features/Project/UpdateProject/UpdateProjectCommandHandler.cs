@@ -2,11 +2,12 @@
 using InternshipRecords.Infrastructure.Persistence;
 using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models;
 using Shared.Models.Project;
 
 namespace InternshipRecords.Application.Features.Project.UpdateProject;
 
-public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand, ProjectDto>
+public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand, MbResult<ProjectDto>>
 {
     private readonly AppDbContext _db;
     private readonly IInternRepository _internRepository;
@@ -22,16 +23,14 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
         _mapper = mapper;
     }
 
-    public async Task<ProjectDto> Handle(UpdateProjectCommand request, CancellationToken cancellationToken)
+    public async Task<MbResult<ProjectDto>> Handle(UpdateProjectCommand request, CancellationToken cancellationToken)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             var project = await _projectRepository.GetByIdAsync(request.Project.Id);
 
-            if (project == null) throw new ArgumentNullException(nameof(project));
-
-            project.Name = request.Project.Name;
+            project!.Name = request.Project.Name;
             project.Description = request.Project.Description;
             project.UpdatedAt = DateTime.UtcNow;
             await _projectRepository.UpdateAsync(project);
@@ -46,12 +45,17 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             await _db.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
 
-            return _mapper.Map<ProjectDto>(project);
+            return MbResult<ProjectDto>.Success(_mapper.Map<ProjectDto>(project));
         }
-        catch
+        catch (Exception ex)
         {
             await tx.RollbackAsync(cancellationToken);
-            throw;
+
+            return ex switch
+            {
+                KeyNotFoundException => MbResult<ProjectDto>.Fail(new MbError("NotFound", ex.Message)),
+                _ => MbResult<ProjectDto>.Fail(new MbError("Неизвестное исключение", ex.Message))
+            };
         }
     }
 }

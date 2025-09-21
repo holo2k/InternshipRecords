@@ -1,9 +1,10 @@
 ﻿using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models;
 
 namespace InternshipRecords.Application.Features.Intern.DeleteIntern;
 
-public class DeleteInternCommandHandler : IRequestHandler<DeleteInternCommand, Unit>
+public class DeleteInternCommandHandler : IRequestHandler<DeleteInternCommand, MbResult<Guid>>
 {
     private readonly IInternRepository _internRepository;
 
@@ -12,9 +13,20 @@ public class DeleteInternCommandHandler : IRequestHandler<DeleteInternCommand, U
         _internRepository = internRepository;
     }
 
-    public async Task<Unit> Handle(DeleteInternCommand request, CancellationToken cancellationToken)
+    public async Task<MbResult<Guid>> Handle(DeleteInternCommand request, CancellationToken cancellationToken)
     {
-        await _internRepository.DeleteAsync(request.InternId);
-        return Unit.Value;
+        try
+        {
+            var result = await _internRepository.DeleteAsync(request.InternId);
+            return MbResult<Guid>.Success(result);
+        }
+        catch (Exception ex)
+        {
+            return ex switch
+            {
+                KeyNotFoundException => MbResult<Guid>.Fail(new MbError("NotFound", ex.Message)),
+                _ => MbResult<Guid>.Fail(new MbError("Неизвестное исключение", ex.Message))
+            };
+        }
     }
 }

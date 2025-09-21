@@ -1,5 +1,4 @@
 ﻿using InternshipRecords.Application.Features.Direction.AddDirection;
-using InternshipRecords.Application.Features.Direction.AttachInternsToDirection;
 using InternshipRecords.Application.Features.Direction.DeleteDirection;
 using InternshipRecords.Application.Features.Direction.GetDirections;
 using InternshipRecords.Application.Features.Direction.UpdateDirection;
@@ -38,19 +37,12 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAll([FromQuery] string[] queryParams)
     {
-        try
+        var query = new GetDirectionsQuery
         {
-            var query = new GetDirectionsQuery
-            {
-                QueryParams = queryParams
-            };
-            var result = await _mediator.Send(query);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+            QueryParams = queryParams
+        };
+        var result = await _mediator.Send(query);
+        return this.FromResult(result);
     }
 
     /// <summary>
@@ -65,16 +57,9 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] AddDirectionRequest request)
     {
-        try
-        {
-            var command = new AddDirectionCommand(request);
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var command = new AddDirectionCommand(request);
+        var result = await _mediator.Send(command);
+        return this.FromResult(result);
     }
 
     /// <summary>
@@ -90,16 +75,9 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update([FromBody] UpdateDirectionRequest request)
     {
-        try
-        {
-            var command = new UpdateDirectionCommand(request);
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var command = new UpdateDirectionCommand(request);
+        var result = await _mediator.Send(command);
+        return this.FromResult(result);
     }
 
     /// <summary>
@@ -117,39 +95,7 @@ public class DirectionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            var result = await _mediator.Send(new DeleteDirectionCommand(id));
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
-    }
-
-    /// <summary>
-    ///     Прикрепить список стажёров к направлению.
-    ///     Ожидает команду AttachInternsToDirectionCommand в теле запроса.
-    /// </summary>
-    /// <param name="command">Команда с Id направления и списком Id стажёров.</param>
-    /// <returns>Результат операции прикрепления.</returns>
-    [HttpPost("attach-interns")]
-    [Produces("application/json")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AttachInterns([FromBody] AttachInternsToDirectionCommand command)
-    {
-        try
-        {
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var result = await _mediator.Send(new DeleteDirectionCommand(id));
+        return this.FromResult(result);
     }
 }

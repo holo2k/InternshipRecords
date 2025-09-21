@@ -1,5 +1,4 @@
 ﻿using InternshipRecords.Application.Features.Project.AddProject;
-using InternshipRecords.Application.Features.Project.AttachInternsToProject;
 using InternshipRecords.Application.Features.Project.DeleteProject;
 using InternshipRecords.Application.Features.Project.GetProjects;
 using InternshipRecords.Application.Features.Project.UpdateProject;
@@ -38,19 +37,12 @@ public class ProjectController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAll([FromQuery] string[] queryParams)
     {
-        try
+        var query = new GetProjectsQuery
         {
-            var query = new GetProjectsQuery
-            {
-                QueryParams = queryParams
-            };
-            var result = await _mediator.Send(query);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+            QueryParams = queryParams
+        };
+        var result = await _mediator.Send(query);
+        return this.FromResult(result);
     }
 
     /// <summary>
@@ -65,16 +57,9 @@ public class ProjectController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] AddProjectRequest request)
     {
-        try
-        {
-            var command = new AddProjectCommand(request);
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var command = new AddProjectCommand(request);
+        var result = await _mediator.Send(command);
+        return this.FromResult(result);
     }
 
     /// <summary>
@@ -90,16 +75,9 @@ public class ProjectController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update([FromBody] UpdateProjectRequest request)
     {
-        try
-        {
-            var command = new UpdateProjectCommand(request);
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var command = new UpdateProjectCommand(request);
+        var result = await _mediator.Send(command);
+        return this.FromResult(result);
     }
 
     /// <summary>
@@ -117,39 +95,7 @@ public class ProjectController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            var result = await _mediator.Send(new DeleteProjectCommand(id));
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
-    }
-
-    /// <summary>
-    ///     Прикрепить список стажёров к проекту.
-    ///     Ожидает команду AttachInternsToProjectCommand в теле запроса.
-    /// </summary>
-    /// <param name="command">Команда с Id проекта и списком Id стажёров.</param>
-    /// <returns>Результат операции прикрепления.</returns>
-    [HttpPost("attach-interns")]
-    [Produces("application/json")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AttachInterns([FromBody] AttachInternsToProjectCommand command)
-    {
-        try
-        {
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return this.FromException(ex);
-        }
+        var result = await _mediator.Send(new DeleteProjectCommand(id));
+        return this.FromResult(result);
     }
 }

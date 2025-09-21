@@ -2,11 +2,12 @@
 using InternshipRecords.Infrastructure.Persistence;
 using InternshipRecords.Infrastructure.Repository.Abstractions;
 using MediatR;
+using Shared.Models;
 using Shared.Models.Direction;
 
 namespace InternshipRecords.Application.Features.Direction.UpdateDirection;
 
-public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionCommand, DirectionDto>
+public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionCommand, MbResult<DirectionDto>>
 {
     private readonly AppDbContext _db;
     private readonly IDirectionRepository _directionRepository;
@@ -22,14 +23,15 @@ public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionComm
         _internRepository = internRepository;
     }
 
-    public async Task<DirectionDto> Handle(UpdateDirectionCommand request, CancellationToken cancellationToken)
+    public async Task<MbResult<DirectionDto>> Handle(UpdateDirectionCommand request,
+        CancellationToken cancellationToken)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             var direction = await _directionRepository.GetByIdAsync(request.Direction.Id);
 
-            if (direction == null) throw new ArgumentNullException(nameof(direction));
+            if (direction == null) throw new KeyNotFoundException(nameof(direction));
 
             direction.Name = request.Direction.Name;
             direction.Description = request.Direction.Description;
@@ -46,12 +48,17 @@ public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionComm
             await _db.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
 
-            return _mapper.Map<DirectionDto>(direction);
+            return MbResult<DirectionDto>.Success(_mapper.Map<DirectionDto>(direction));
         }
-        catch
+        catch (Exception ex)
         {
             await tx.RollbackAsync(cancellationToken);
-            throw;
+
+            return ex switch
+            {
+                ArgumentNullException => MbResult<DirectionDto>.Fail(new MbError("NotFound", ex.Message)),
+                _ => MbResult<DirectionDto>.Fail(new MbError("Неизвестная ошибка", ex.Message))
+            };
         }
     }
 }

@@ -1,6 +1,9 @@
-﻿using System.Net.Http.Json;
+﻿// ProjectService.cs
+
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using InternshipRecords.Client.Helpers;
 using Shared.Models.Direction;
 using Shared.Models.Project;
 
@@ -24,6 +27,7 @@ public class ProjectService
         _http = http;
     }
 
+
     public async Task<(List<ProjectDto> Projects, string? Error)> GetProjectsAsync(params string[]? queryParams)
     {
         try
@@ -36,16 +40,11 @@ public class ProjectService
             }
 
             var response = await _http.GetAsync(url);
-            var content = await response.Content.ReadAsStringAsync();
+            var mb = await MbResultReader.ReadMbResultAsync<List<ProjectDto>>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var list = JsonSerializer.Deserialize<List<ProjectDto>>(content, _options) ?? new List<ProjectDto>();
-                return (list, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (new List<ProjectDto>(), error?["message"].ToString());
+            return mb.IsSuccess
+                ? (mb.Result ?? new List<ProjectDto>(), null)
+                : (new List<ProjectDto>(), mb.Error?.Message);
         }
         catch (Exception ex)
         {
@@ -57,17 +56,11 @@ public class ProjectService
     {
         try
         {
-            var response = await _http.PostAsJsonAsync("api/project", request);
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await _http.PostAsJsonAsync("api/project", request, _options);
+            var mb = await MbResultReader.ReadMbResultAsync<ProjectDto>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var dto = JsonSerializer.Deserialize<ProjectDto>(content, _options);
-                return (dto, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"].ToString());
+            if (mb.IsSuccess) return (mb.Result, null);
+            return (null, mb.Error?.Message);
         }
         catch (Exception ex)
         {
@@ -79,17 +72,11 @@ public class ProjectService
     {
         try
         {
-            var response = await _http.PatchAsJsonAsync("api/project", request);
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await _http.PatchAsJsonAsync("api/project", request, _options);
+            var mb = await MbResultReader.ReadMbResultAsync<ProjectDto>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var dto = JsonSerializer.Deserialize<ProjectDto>(content, _options);
-                return (dto, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"].ToString());
+            if (mb.IsSuccess) return (mb.Result, null);
+            return (null, mb.Error?.Message);
         }
         catch (Exception ex)
         {
@@ -102,16 +89,10 @@ public class ProjectService
         try
         {
             var response = await _http.DeleteAsync($"api/project/{id}");
-            var content = await response.Content.ReadAsStringAsync();
+            var mb = await MbResultReader.ReadMbResultAsync<Guid>(response, _options);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var dto = JsonSerializer.Deserialize<Guid>(content, _options);
-                return (dto, null);
-            }
-
-            var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"].ToString());
+            if (mb.IsSuccess) return (mb.Result, null);
+            return (null, mb.Error?.Message);
         }
         catch (Exception ex)
         {
