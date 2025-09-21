@@ -1,6 +1,4 @@
-﻿// DirectionService.cs
-
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using InternshipRecords.Client.Helpers;
@@ -28,75 +26,75 @@ public class DirectionService
     }
 
 
-    public async Task<(List<DirectionDto> Directions, string? Error)> GetDirectionsAsync(params string[]? queryParams)
+    public async Task<List<DirectionDto>> GetDirectionsAsync(params string[]? queryParams)
     {
-        try
+        var url = "api/direction";
+        if (queryParams is { Length: > 0 })
         {
-            var url = "api/direction";
-            if (queryParams is { Length: > 0 })
-            {
-                var queryString = string.Join("&", queryParams.Select(p => $"queryParams={Uri.EscapeDataString(p)}"));
-                url += "?" + queryString;
-            }
-
-            var response = await _http.GetAsync(url);
-            var mb = await MbResultReader.ReadMbResultAsync<List<DirectionDto>>(response, _options);
-
-            return mb.IsSuccess
-                ? (mb.Result ?? new List<DirectionDto>(), null)
-                : (new List<DirectionDto>(), mb.Error?.Message);
+            var queryString = string.Join("&", queryParams.Select(p => $"queryParams={Uri.EscapeDataString(p)}"));
+            url += "?" + queryString;
         }
-        catch (Exception ex)
-        {
-            return (new List<DirectionDto>(), ex.Message);
-        }
+
+        var response = await _http.GetAsync(url);
+        var mb = await MbResultReader.ReadMbResultAsync<List<DirectionDto>>(response, _options);
+
+        if (mb.IsSuccess) return mb.Result ?? new List<DirectionDto>();
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
+
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 
-    public async Task<(DirectionDto? Direction, string? Error)> AddDirectionAsync(AddDirectionRequest request)
+    public async Task<DirectionDto?> AddDirectionAsync(AddDirectionRequest request)
     {
-        try
-        {
-            var response = await _http.PostAsJsonAsync("api/direction", request, _options);
-            var mb = await MbResultReader.ReadMbResultAsync<DirectionDto>(response, _options);
+        var response = await _http.PostAsJsonAsync("api/direction", request, _options);
+        var mb = await MbResultReader.ReadMbResultAsync<DirectionDto>(response, _options);
 
-            if (mb.IsSuccess) return (mb.Result, null);
-            return (null, mb.Error?.Message);
-        }
-        catch (Exception ex)
-        {
-            return (null, ex.Message);
-        }
+        if (mb.IsSuccess) return mb.Result ?? new DirectionDto();
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
+
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 
-    public async Task<(DirectionDto? Direction, string? Error)> UpdateDirectionAsync(UpdateDirectionRequest request)
+    public async Task<DirectionDto?> UpdateDirectionAsync(UpdateDirectionRequest request)
     {
-        try
-        {
-            var response = await _http.PatchAsJsonAsync("api/direction", request, _options);
-            var mb = await MbResultReader.ReadMbResultAsync<DirectionDto>(response, _options);
+        var response = await _http.PatchAsJsonAsync("api/direction", request, _options);
+        var mb = await MbResultReader.ReadMbResultAsync<DirectionDto>(response, _options);
 
-            if (mb.IsSuccess) return (mb.Result, null);
-            return (null, mb.Error?.Message);
-        }
-        catch (Exception ex)
-        {
-            return (null, ex.Message);
-        }
+        if (mb.IsSuccess) return mb.Result ?? new DirectionDto();
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
+
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 
-    public async Task<(Guid? DeletedId, string? Error)> DeleteDirectionAsync(Guid id)
+    public async Task<Guid?> DeleteDirectionAsync(Guid id)
     {
-        try
-        {
-            var response = await _http.DeleteAsync($"api/direction/{id}");
-            var mb = await MbResultReader.ReadMbResultAsync<Guid>(response, _options);
+        var response = await _http.DeleteAsync($"api/direction/{id}");
+        var mb = await MbResultReader.ReadMbResultAsync<Guid>(response, _options);
 
-            if (mb.IsSuccess) return (mb.Result, null);
-            return (null, mb.Error?.Message);
-        }
-        catch (Exception ex)
-        {
-            return (null, ex.Message);
-        }
+        if (mb.IsSuccess) return mb.Result;
+
+        var validationErrors = mb.Error!.ValidationErrors?
+            .Values
+            .SelectMany(v => v)
+            .ToArray() ?? Array.Empty<string>();
+
+        throw new InvalidOperationException(
+            $"{mb.Error.Message}{(validationErrors.Any() ? " : " + string.Join(" ", validationErrors) : string.Empty)}"
+        );
     }
 }

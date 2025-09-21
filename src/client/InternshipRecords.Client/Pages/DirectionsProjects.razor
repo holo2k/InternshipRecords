@@ -14,18 +14,14 @@
     <h3>Направления и проекты</h3>
 
     <div class="tabs">
-        <button class="tab-button @(_activeTab == "directions" ? "active" : "")" @onclick="SwitchTabDepartments">
-            Направления
-        </button>
-        <button class="tab-button @(_activeTab == "projects" ? "active" : "")" @onclick="SwitchTabProjects">
-            Проекты
-        </button>
+         <button class="tab-button @(_activeTab == "directions" ? "active" : "")" @onclick="SwitchTabDirections"> Направления </button>
+        <button class="tab-button @(_activeTab == "projects" ? "active" : "")" @onclick="SwitchTabProjects"> Проекты </button>
     </div>
 
     <div class="controls-row">
         <div class="search-sort">
             <input placeholder="Поиск" @bind="_searchTerm" @bind:event="oninput" class="form-control search-input" />
-            <select class="form-control sort-select" @onchange="SortChanged">
+            <select class="form-control sort-select" @onchange="OnSortChanged">
                 <option value="name">Сортировать по названию</option>
                 <option value="count">Сортировать по количеству стажеров</option>
             </select>
@@ -37,132 +33,138 @@
         {
             <div class="alert alert-danger mt-2">@_errorMessage</div>
         }
-        @if (_activeTab == "directions")
-        {
-            <div class="grid-add">
-                <input placeholder="Новое направление" @bind="_newDirectionName" class="form-control"/>
-                <input placeholder="Описание направления" @bind="_newDirectionDescription" class="form-control"/>
 
-                <label>Прикрепить стажёров</label>
-                <div>
-                    <select multiple class="form-control" @onchange="OnDirectionInternsChanged" style="margin-bottom:8px">
+        @switch (_activeTab)
+        {
+            case "directions":
+            {
+                <div class="grid-add">
+                    <input placeholder="Новое направление" @bind="@_newDirectionName" class="form-control" />
+                    <input placeholder="Описание направления" @bind="@_newDirectionDescription" class="form-control" />
+
+                    <label>Прикрепить стажёров</label>
+                    <div>
+                        <select multiple class="form-control" @onchange="@OnDirectionInternsChanged" style="margin-bottom:8px">
+                            @foreach (var intern in _allInterns)
+                            {
+                                <option value="@intern.Id">@intern.FirstName @intern.LastName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary" @onclick="@AddDirection">Добавить направление</button>
+                </div>
+
+                if (FilteredDirections.Any())
+                {
+                    <ul class="items-list">
+                        @foreach (var direction in FilteredDirections)
+                        {
+                            <li class="list-item">
+                                <div class="item-top">
+                                    <div>
+                                        <strong class="item-title">@direction.Direction.Name</strong>
+                                        <div class="item-description">@direction.Direction.Description</div>
+                                        <div class="muted">(@direction.InternCount стажеров)</div>
+                                    </div>
+                                    <div class="item-actions">
+                                        <button class="btn btn-sm" @onclick="@(() => ToggleInterns(direction))">
+                                            @(direction.ShowInterns ? "Скрыть" : "Показать")
+                                        </button>
+                                        <button class="btn btn-sm" @onclick="@(() => EditDirection(direction))">Редактировать</button>
+                                        <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteDirection(direction))">Удалить</button>
+                                    </div>
+                                </div>
+
+                                @if (direction.ShowInterns)
+                                {
+                                    if (direction.Interns.Any())
+                                    {
+                                        <ul class="interns-sublist">
+                                            @foreach (var intern in direction.Interns)
+                                            {
+                                                <li>@intern.FirstName @intern.LastName</li>
+                                            }
+                                        </ul>
+                                    }
+                                    else
+                                    {
+                                        <p class="muted">Нет стажеров в этом направлении</p>
+                                    }
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>Направления не найдены</p>
+                }
+                break;
+            }
+            case "projects":
+            {
+                <div class=" grid-add">
+                    <input placeholder="Новый проект" @bind="@_newProjectName" class="form-control" />
+                    <input placeholder="Описание проекта" @bind="@_newProjectDescription" class="form-control" />
+
+                    <label>Прикрепить стажёров</label>
+                    <select multiple class="form-control" @onchange="@OnProjectInternsChanged">
                         @foreach (var intern in _allInterns)
                         {
                             <option value="@intern.Id">@intern.FirstName @intern.LastName</option>
                         }
                     </select>
+
+                    <button class="btn btn-primary" @onclick="@AddProject">Добавить проект</button>
                 </div>
 
-                <button class="btn btn-primary" @onclick="AddDirection">Добавить направление</button>
-            </div>
-
-            @if (FilteredDirections.Any())
-            {
-                <ul class="items-list">
-                    @foreach (var direction in FilteredDirections)
-                    {
-                        <li class="list-item">
-                            <div class="item-top">
-                                <div>
-                                    <strong class="item-title">@direction.Direction.Name</strong>
-                                    <div class="item-description">@direction.Direction.Description</div>
-                                    <div class="muted">(@direction.InternCount стажеров)</div>
+                if (FilteredProjects.Any())
+                {
+                    <ul class="items-list">
+                        @foreach (var project in FilteredProjects)
+                        {
+                            <li class="list-item">
+                                <div class="item-top">
+                                    <div>
+                                        <strong class="item-title">@project.Project!.Name</strong>
+                                        <div class="item-description">@project.Project.Description</div>
+                                        <div class="muted">(@project.InternCount стажеров)</div>
+                                    </div>
+                                    <div class="item-actions">
+                                        <button class="btn btn-sm" @onclick="@(() => ToggleInterns(project))">
+                                            @(project.ShowInterns ? "Скрыть" : "Показать")
+                                        </button>
+                                        <button class="btn btn-sm" @onclick="@(() => EditProject(project))">Редактировать</button>
+                                        <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteProject(project))">Удалить</button>
+                                    </div>
                                 </div>
-                                <div class="item-actions">
-                                    <button class="btn btn-sm" @onclick="() => ToggleInterns(direction)">
-                                        @(direction.ShowInterns ? "Скрыть" : "Показать")
-                                    </button>
-                                    <button class="btn btn-sm" @onclick="() => EditDirection(direction)">Редактировать</button>
-                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteDirection(direction)">Удалить</button>
-                                </div>
-                            </div>
 
-                            @if (direction.ShowInterns)
-                            {
-                                @if (direction.Interns.Any())
+                                @if (project.ShowInterns)
                                 {
-                                    <ul class="interns-sublist">
-                                        @foreach (var intern in direction.Interns)
-                                        {
-                                            <li>@intern.FirstName @intern.LastName</li>
-                                        }
-                                    </ul>
+                                    if (project.Interns.Any())
+                                    {
+                                        <ul class="interns-sublist">
+                                            @foreach (var intern in project.Interns)
+                                            {
+                                                <li>@intern.FirstName @intern.LastName</li>
+                                            }
+                                        </ul>
+                                    }
+                                    else
+                                    {
+                                        <p class="muted">Нет стажеров в этом проекте</p>
+                                    }
                                 }
-                                else
-                                {
-                                    <p class="muted">Нет стажеров в этом направлении</p>
-                                }
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <p>Направления не найдены</p>
-            }
-        }
-        else if (_activeTab == "projects")
-        {
-            <div class=" grid-add">
-                 <input placeholder="Новый проект" @bind="_newProjectName" class="form-control"/>
-                 <input placeholder="Описание проекта" @bind="_newProjectDescription" class="form-control"/>
-
-                 <label>Прикрепить стажёров</label>
-                 <select multiple class="form-control" @onchange="OnProjectInternsChanged">
-                     @foreach (var intern in _allInterns)
-                     {
-                         <option value="@intern.Id">@intern.FirstName @intern.LastName</option>
-                     }
-                 </select>
-
-                 <button class="btn btn-primary" @onclick="AddProject">Добавить проект</button>
-            </div>
-
-            @if (FilteredProjects.Any())
-            {
-                <ul class="items-list">
-                    @foreach (var project in FilteredProjects)
-                    {
-                        <li class="list-item">
-                            <div class="item-top">
-                                <div>
-                                    <strong class="item-title">@project.Project!.Name</strong>
-                                    <div class="item-description">@project.Project.Description</div>
-                                    <div class="muted">(@project.InternCount стажеров)</div>
-                                </div>
-                                <div class="item-actions">
-                                    <button class="btn btn-sm" @onclick="() => ToggleInterns(project)">
-                                        @(project.ShowInterns ? "Скрыть" : "Показать")
-                                    </button>
-                                    <button class="btn btn-sm" @onclick="() => EditProject(project)">Редактировать</button>
-                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteProject(project)">Удалить</button>
-                                </div>
-                            </div>
-
-                            @if (project.ShowInterns)
-                            {
-                                @if (project.Interns.Any())
-                                {
-                                    <ul class="interns-sublist">
-                                        @foreach (var intern in project.Interns)
-                                        {
-                                            <li>@intern.FirstName @intern.LastName</li>
-                                        }
-                                    </ul>
-                                }
-                                else
-                                {
-                                    <p class="muted">Нет стажеров в этом проекте</p>
-                                }
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <p>Проекты не найдены</p>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>Проекты не найдены</p>
+                }
+                break;
             }
         }
     </div>
@@ -193,305 +195,202 @@
     private int _currentPage = 1;
     private int _pageSize = 5;
 
-    private List<DirectionDto?> _allDirections = new();
-    private List<ProjectDto?> _allProjects = new();
+    private List<DirectionDto> _allDirections = new();
+    private List<ProjectDto> _allProjects = new();
     private List<InternDto> _allInterns = new();
 
     private List<DirectionViewModel> _directionViewModels = new();
     private List<ProjectViewModel> _projectViewModels = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+
+    private async Task LoadDataAsync()
     {
-        await LoadData();
-    }
+        try
+        {
+            var directionsTask = DirectionService.GetDirectionsAsync(_sortBy == "count" ? new[] { "orderByCount" } : new[] { "orderByName" });
+            var projectsTask = ProjectService.GetProjectsAsync(_sortBy == "count" ? new[] { "orderByCount" } : new[] { "orderByName" });
+            var internsTask = InternService.GetInternsAsync();
 
-    private async Task LoadData()
-    {
-        string[] directionParams = _sortBy == "name" ? new[] { "orderByName" } : new[] { "orderByCount" };
-        string[] projectParams = _sortBy == "name" ? new[] { "orderByName" } : new[] { "orderByCount" };
+            await Task.WhenAll(directionsTask, projectsTask, internsTask);
 
-        var directionsTask = DirectionService.GetDirectionsAsync(directionParams);
-        var projectsTask = ProjectService.GetProjectsAsync(projectParams);
-        var internsTask = InternService.GetInternsAsync();
+            _allDirections = directionsTask.Result;
+            _allProjects = projectsTask.Result;
+            _allInterns = internsTask.Result;
 
-        await Task.WhenAll(directionsTask, projectsTask, internsTask);
+            var comparer = StringComparer.Create(new System.Globalization.CultureInfo("ru-RU"), true);
 
-        _allDirections = (await directionsTask).Directions!;
-        _allProjects = (await projectsTask).Projects!;
-        _allInterns = await internsTask;
-
-        var comparer = StringComparer.Create(new System.Globalization.CultureInfo("ru-RU"), true);
-
-        _directionViewModels = _allDirections
-            .Select(d => new DirectionViewModel
+            _directionViewModels = _allDirections.Select(d => new DirectionViewModel
             {
-                Direction = d!,
-                InternCount = _allInterns.Count(i => i.DirectionId == d?.Id),
-                Interns = _allInterns.Where(i => i.DirectionId == d?.Id).ToList(),
-                ShowInterns = false
+                Direction = d,
+                Interns = _allInterns.Where(i => i.DirectionId == d.Id).ToList(),
+                InternCount = _allInterns.Count(i => i.DirectionId == d.Id)
             })
-            .OrderBy(dvm => _sortBy == "count" ? -dvm.InternCount : 0) 
-            .ThenBy(dvm => dvm.Direction.Name, comparer)
+            .OrderByDescending(d => _sortBy == "count" ? d.InternCount : 0)
+            .ThenBy(d => d.Direction.Name, comparer)
             .ToList();
 
-        if (_sortBy == "count")
-        {
-            _directionViewModels = _directionViewModels
-                .OrderByDescending(d => d.InternCount)
-                .ThenBy(d => d.Direction.Name, comparer)
-                .ToList();
-        }
-        else
-        {
-            _directionViewModels = _directionViewModels
-                .OrderBy(d => d.Direction.Name, comparer)
-                .ToList();
-        }
-
-        _projectViewModels = _allProjects
-            .Select(p => new ProjectViewModel
+            _projectViewModels = _allProjects.Select(p => new ProjectViewModel
             {
                 Project = p,
-                InternCount = _allInterns.Count(i => i.ProjectId == p?.Id),
-                Interns = _allInterns.Where(i => i.ProjectId == p?.Id).ToList(),
-                ShowInterns = false
+                Interns = _allInterns.Where(i => i.ProjectId == p.Id).ToList(),
+                InternCount = _allInterns.Count(i => i.ProjectId == p.Id)
             })
+            .OrderByDescending(p => _sortBy == "count" ? p.InternCount : 0)
+            .ThenBy(p => p.Project.Name, comparer)
             .ToList();
 
-        if (_sortBy == "count")
-        {
-            _projectViewModels = _projectViewModels
-                .OrderByDescending(p => p.InternCount)
-                .ThenBy(p => p.Project?.Name, comparer)
-                .ToList();
+            _currentPage = 1;
         }
-        else
+        catch (Exception ex)
         {
-            _projectViewModels = _projectViewModels
-                .OrderBy(p => p.Project?.Name, comparer)
-                .ToList();
+            _errorMessage = $"Ошибка при загрузке данных: {ex.Message}";
         }
-
-        _currentPage = 1;
-        StateHasChanged();
     }
 
-    private void SwitchTabDepartments()
+    private void SwitchTabDirections() { _activeTab = "directions"; _currentPage = 1; } 
+    private void SwitchTabProjects() { _activeTab = "projects"; _currentPage = 1; }
+
+    private void OnSortChanged(ChangeEventArgs e)
     {
-        _activeTab = "directions";
-        _currentPage = 1;
+        _sortBy = e.Value?.ToString() ?? "name";
+        _ = LoadDataAsync();
     }
 
-    private void SwitchTabProjects()
-    {
-        _activeTab = "projects";
-        _currentPage = 1;
-    }
+    private IEnumerable<DirectionViewModel> FilteredDirections =>
+        _directionViewModels
+            .Where(d => string.IsNullOrWhiteSpace(_searchTerm) || d.Direction.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) || d.Direction.Description.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase))
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize);
 
-    private static void ToggleInterns(DirectionViewModel direction) => direction.ShowInterns = !direction.ShowInterns;
-    private static void ToggleInterns(ProjectViewModel project) => project.ShowInterns = !project.ShowInterns;
+    private IEnumerable<ProjectViewModel> FilteredProjects =>
+        _projectViewModels
+            .Where(p => string.IsNullOrWhiteSpace(_searchTerm) || p.Project.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) || p.Project.Description.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase))
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize);
 
-    private async Task AddDirection()
-    {
-        _errorMessage = null;
+    private bool HasNextPage => _activeTab == "directions"
+        ? _directionViewModels.Count > _currentPage * _pageSize
+        : _projectViewModels.Count > _currentPage * _pageSize;
 
-        if (string.IsNullOrWhiteSpace(_newDirectionName))
-        {
-            _errorMessage = "Название направления не может быть пустым.";
-            return;
-        }
+    private void PrevPage() => _currentPage = Math.Max(1, _currentPage - 1);
+    private void NextPage() { if (HasNextPage) _currentPage++; }
 
-        var request = new AddDirectionRequest
+    private void ToggleInterns(DirectionViewModel direction) => direction.ShowInterns = !direction.ShowInterns;
+    private void ToggleInterns(ProjectViewModel project) => project.ShowInterns = !project.ShowInterns;
+
+    private async Task AddDirection() => await AddEntityAsync(
+        _newDirectionName,
+        _newDirectionDescription,
+        _selectedDirectionInternIds,
+        async () => await DirectionService.AddDirectionAsync(new AddDirectionRequest
         {
             Name = _newDirectionName,
             Description = _newDirectionDescription,
             InternIds = _selectedDirectionInternIds
-        };
+        }),
+        () => { _newDirectionName = ""; _newDirectionDescription = ""; _selectedDirectionInternIds.Clear(); });
 
-        try
-        {
-            var (addedDirection, error) = await DirectionService.AddDirectionAsync(request);
-            if (!string.IsNullOrEmpty(error))
-            {
-                _errorMessage = $"Ошибка при добавлении направления: {error}";
-                return;
-            }
-
-            if (addedDirection is null)
-            {
-                _errorMessage = "Не удалось добавить направление по неизвестной причине.";
-                return;
-            }
-
-            _newDirectionName = "";
-            _newDirectionDescription = "";
-            _selectedDirectionInternIds.Clear();
-            await LoadData();
-        }
-        catch (Exception ex)
-        {
-            _errorMessage = $"Системная ошибка при добавлении направления: {ex.Message}";
-        }
-    }
-
-    private async Task AddProject()
-    {
-        _errorMessage = null;
-
-        if (string.IsNullOrWhiteSpace(_newProjectName))
-        {
-            _errorMessage = "Название проекта не может быть пустым.";
-            return;
-        }
-
-        var request = new AddProjectRequest
+    private async Task AddProject() => await AddEntityAsync(
+        _newProjectName,
+        _newProjectDescription,
+        _selectedProjectInternIds,
+        async () => await ProjectService.AddProjectAsync(new AddProjectRequest
         {
             Name = _newProjectName,
             Description = _newProjectDescription,
             InternIds = _selectedProjectInternIds
-        };
+        }),
+        () => { _newProjectName = ""; _newProjectDescription = ""; _selectedProjectInternIds.Clear(); });
+
+    private async Task AddEntityAsync<T>(string name, string description, List<Guid> internIds, Func<Task<T?>> addFunc, Action clearAction)
+        where T : class
+    {
+        _errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _errorMessage = "Название не может быть пустым.";
+            return;
+        }
 
         try
         {
-            var (addedProject, error) = await ProjectService.AddProjectAsync(request);
-            if (!string.IsNullOrEmpty(error))
+            var added = await addFunc();
+            if (added is null)
             {
-                _errorMessage = $"Ошибка при добавлении проекта: {error}";
+                _errorMessage = "Не удалось добавить запись.";
                 return;
             }
 
-            if (addedProject is null)
-            {
-                _errorMessage = "Не удалось добавить проект.";
-                return;
-            }
-
-            _newProjectName = "";
-            _newProjectDescription = "";
-            _selectedProjectInternIds.Clear();
-            await LoadData();
+            clearAction();
+            await LoadDataAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _errorMessage = ex.Message;
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Системная ошибка при добавлении проекта: {ex.Message}";
+            _errorMessage = $"Системная ошибка: {ex.Message}";
         }
     }
 
-    private async Task DeleteDirection(DirectionViewModel direction)
+    private async Task DeleteDirection(DirectionViewModel direction) => await DeleteEntityAsync(
+        direction.Direction.Id,
+        DirectionService.DeleteDirectionAsync,
+        "направление",
+        () => _directionViewModels.Remove(direction));
+
+    private async Task DeleteProject(ProjectViewModel project) => await DeleteEntityAsync(
+        project.Project.Id,
+        ProjectService.DeleteProjectAsync,
+        "проект",
+        () => _projectViewModels.Remove(project));
+
+    private async Task DeleteEntityAsync(Guid id, Func<Guid, Task<Guid?>> deleteFunc, string entityName, Action removeAction)
     {
         _errorMessage = null;
-        var (deletedId, error) = await DirectionService.DeleteDirectionAsync(direction.Direction.Id);
-
-        if (!string.IsNullOrEmpty(error))
+        try
         {
-            _errorMessage = error;
-            return;
+            var deletedId = await deleteFunc(id);
+            if (deletedId is null)
+            {
+                _errorMessage = $"Нельзя удалить {entityName} с прикрепленными стажёрами.";
+                return;
+            }
+
+            removeAction();
+            await LoadDataAsync();
         }
-
-        if (deletedId is null)
+        catch (Exception ex)
         {
-            _errorMessage = "Нельзя удалить направление с прикрепленными стажёрами.";
-            return;
-        }
-
-        _directionViewModels.Remove(direction);
-        await LoadData();
-    }
-
-
-    private async Task DeleteProject(ProjectViewModel project)
-    {
-        _errorMessage = null;
-        var (deletedId, error) = await ProjectService.DeleteProjectAsync(project.Project!.Id);
-
-        if (!string.IsNullOrEmpty(error))
-        {
-            _errorMessage = error;
-            return;
-        }
-
-        if (deletedId is null)
-        {
-            _errorMessage = "Нельзя удалить проект с прикрепленными стажёрами.";
-            return;
-        }
-
-        _projectViewModels.Remove(project);
-        await LoadData();
-    }
-
-
-    private void OnDirectionInternsChanged(ChangeEventArgs e)
-    {
-        var selectedValues = (e.Value as IEnumerable<string>)?.ToList() ?? new List<string>();
-        _selectedDirectionInternIds = selectedValues.Select(Guid.Parse).ToList();
-    }
-
-    private void OnProjectInternsChanged(ChangeEventArgs e)
-    {
-        var selectedValues = (e.Value as IEnumerable<string>)?.ToList() ?? new List<string>();
-        _selectedProjectInternIds = selectedValues.Select(Guid.Parse).ToList();
-    }
-
-    private void EditDirection(DirectionViewModel direction)
-        => NavigationManager.NavigateTo($"/edit-direction/{direction.Direction.Id}");
-
-    private void EditProject(ProjectViewModel project)
-        => NavigationManager.NavigateTo($"/edit-project/{project.Project!.Id}");
-
-    private void SortChanged(ChangeEventArgs e)
-    {
-        _sortBy = e.Value?.ToString() ?? "name";
-        _ = LoadData();
-    }
-
-    private IEnumerable<DirectionViewModel> FilteredDirections
-    {
-        get
-        {
-            var list = _directionViewModels.AsEnumerable();
-            if (!string.IsNullOrEmpty(_searchTerm))
-                list = list.Where(d => d.Direction.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)
-                                      || (d.Direction.Description).Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
-            return list.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
+            _errorMessage = $"Ошибка при удалении {entityName}: {ex.Message}";
         }
     }
 
-    private IEnumerable<ProjectViewModel> FilteredProjects
-    {
-        get
-        {
-            var list = _projectViewModels.AsEnumerable();
-            if (!string.IsNullOrEmpty(_searchTerm))
-                list = list.Where(p => p.Project!.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)
-                                     || (p.Project.Description).Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
-            return list.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
-        }
-    }
+    private void OnDirectionInternsChanged(ChangeEventArgs e) => _selectedDirectionInternIds = GetSelectedIds(e);
+    private void OnProjectInternsChanged(ChangeEventArgs e) => _selectedProjectInternIds = GetSelectedIds(e);
+    private List<Guid> GetSelectedIds(ChangeEventArgs e) => ((IEnumerable<string>?)e.Value ?? Array.Empty<string>()).Select(Guid.Parse).ToList();
 
-    private bool HasNextPage
-        => _activeTab == "directions"
-            ? _directionViewModels.Count > _currentPage * _pageSize
-            : _projectViewModels.Count > _currentPage * _pageSize;
-
-    private void PrevPage() => _currentPage = Math.Max(1, _currentPage - 1);
-    private void NextPage() { if (HasNextPage) _currentPage++; }
+    private void EditDirection(DirectionViewModel direction) => NavigationManager.NavigateTo($"/edit-direction/{direction.Direction.Id}");
+    private void EditProject(ProjectViewModel project) => NavigationManager.NavigateTo($"/edit-project/{project.Project.Id}");
 
     public void Dispose() { }
 
     private class DirectionViewModel
     {
-        public DirectionDto Direction { get; init; } = new();
-        public int InternCount { get; init; }
-        public List<InternDto> Interns { get; init; } = new();
+        public DirectionDto Direction { get; set; } = new();
+        public List<InternDto> Interns { get; set; } = new();
+        public int InternCount { get; set; }
         public bool ShowInterns { get; set; }
     }
 
     private class ProjectViewModel
     {
-        public ProjectDto? Project { get; init; } = new();
-        public int InternCount { get; init; }
-        public List<InternDto> Interns { get; init; } = new();
+        public ProjectDto Project { get; set; } = new();
+        public List<InternDto> Interns { get; set; } = new();
+        public int InternCount { get; set; }
         public bool ShowInterns { get; set; }
     }
 }

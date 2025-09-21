@@ -73,7 +73,7 @@
                         <label>Направление</label>
                         <InputSelect @bind-Value="_internRequest.DirectionId" class="form-control">
                             <option value="">Нет</option>
-                            @foreach (var d in _directions.Item1)
+                            @foreach (var d in _directions)
                             {
                                 <option value="@d.Id">@d.Name</option>
                             }
@@ -84,7 +84,7 @@
                         <label>Проект</label>
                         <InputSelect @bind-Value="_internRequest.ProjectId" class="form-control">
                             <option value="">Нет</option>
-                            @foreach (var p in _projects.Item1.Where(p => p != null))
+                            @foreach (var p in _projects.Where(p => p != null))
                             {
                                 <option value="@p!.Id">@p.Name</option>
                             }
@@ -106,8 +106,8 @@
     private bool _loaded;
     private InternDto _intern = new();
     private readonly UpdateInternRequest _internRequest = new();
-    private (List<DirectionDto>, string?) _directions = new();
-    private (List<ProjectDto>, string?) _projects = new();
+    private List<DirectionDto> _directions = new();
+    private List<ProjectDto> _projects = new();
     private string? _serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
@@ -118,26 +118,43 @@
 
     private async Task LoadLookups()
     {
-        _directions = await DirectionService.GetDirectionsAsync();
-        _projects = await ProjectService.GetProjectsAsync();
+        try
+        {
+            var dirs = await DirectionService.GetDirectionsAsync();
+            _directions = dirs;
+
+            var projects = await ProjectService.GetProjectsAsync();
+            _projects = projects;
+        }
+        catch (Exception ex)
+        {
+            _serverErrorMessage = ex.Message;
+        }
     }
 
     private async Task LoadIntern()
     {
-        _intern = await InternService.GetInternAsync(Id);
+        try
+        {
+            _intern = await InternService.GetInternAsync(Id);
 
-        _internRequest.Id = _intern.Id;
-        _internRequest.FirstName = _intern.FirstName;
-        _internRequest.LastName = _intern.LastName;
-        _internRequest.Email = _intern.Email;
-        _internRequest.Phone = _intern.Phone;
-        _internRequest.BirthDate = _intern.BirthDate;
-        _internRequest.DirectionId = _intern.DirectionId;
-        _internRequest.ProjectId = _intern.ProjectId;
-        _internRequest.Gender = _intern.Gender;
+            _internRequest.Id = _intern.Id;
+            _internRequest.FirstName = _intern.FirstName;
+            _internRequest.LastName = _intern.LastName;
+            _internRequest.Email = _intern.Email;
+            _internRequest.Phone = _intern.Phone;
+            _internRequest.BirthDate = _intern.BirthDate;
+            _internRequest.DirectionId = _intern.DirectionId;
+            _internRequest.ProjectId = _intern.ProjectId;
+            _internRequest.Gender = _intern.Gender;
 
-        _loaded = true;
-        await InvokeAsync(StateHasChanged);
+            _loaded = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _serverErrorMessage = ex.Message;
+        }
     }
 
     private async Task HandleValidSubmit()

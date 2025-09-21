@@ -25,7 +25,7 @@
 
             <select class="form-control" style="min-width:220px" @onchange="OnDirectionFilterChanged">
                 <option value="">Все направления</option>
-                @foreach (var d in _directions.Item1 ?? Enumerable.Empty<DirectionDto>())
+                @foreach (var d in _directions ?? Enumerable.Empty<DirectionDto>())
                 {
                     <option value="@d.Id">@d.Name</option>
                 }
@@ -33,7 +33,7 @@
 
             <select class="form-control" style="min-width:220px" @onchange="OnProjectFilterChanged">
                 <option value="">Все проекты</option>
-                @foreach (var p in _projects.Item1 ?? Enumerable.Empty<ProjectDto?>())
+                @foreach (var p in _projects ?? Enumerable.Empty<ProjectDto?>())
                 {
                     <option value="@p?.Id">@p?.Name</option>
                 }
@@ -51,9 +51,9 @@
                             <div style="font-weight:600;font-size:1.05rem">@intern.FirstName @intern.LastName</div>
                             <div style="color:#6c757d;font-size:.9rem;margin-top:6px">
                                 <div>
-                                    @( (_directions.Item1 ?? Enumerable.Empty<DirectionDto>()).FirstOrDefault(d => d.Id == intern.DirectionId)?.Name ?? (intern.DirectionId?.ToString() ?? "-") )
+                                    @( (_directions ?? Enumerable.Empty<DirectionDto>()).FirstOrDefault(d => d.Id == intern.DirectionId)?.Name ?? (intern.DirectionId?.ToString() ?? "-") )
                                     •
-                                    @( (_projects.Item1 ?? Enumerable.Empty<ProjectDto?>()).FirstOrDefault(p => p?.Id == intern.ProjectId)?.Name ?? "-" )
+                                    @( (_projects ?? Enumerable.Empty<ProjectDto?>()).FirstOrDefault(p => p?.Id == intern.ProjectId)?.Name ?? "-" )
                                 </div>
                                 <div>@intern.Email</div>
                                 <div>@(intern.Phone ?? "-")</div>
@@ -90,9 +90,8 @@
     private List<InternDto> _interns = new();
     private List<InternDto> _filteredInterns = new();
 
-    // Инициализируем Item1 пустыми списками, чтобы избежать NRE до загрузки данных
-    private (List<DirectionDto> Directions, string? Error) _directions = (new List<DirectionDto>(), null);
-    private (List<ProjectDto?> Projects, string? Error) _projects = (new List<ProjectDto?>(), null);
+    private List<DirectionDto> _directions = new();
+    private List<ProjectDto>  _projects = new();
 
     private Guid? _filterDirectionId;
     private Guid? _filterProjectId;
@@ -110,13 +109,18 @@
 
     private async Task LoadLookups()
     {
-        // DirectionService.GetDirectionsAsync и ProjectService.GetProjectsAsync ожидаются
-        // возвращать (List<T>, string?) — мы безопасно применяем результат.
-        var dirs = await DirectionService.GetDirectionsAsync();
-        _directions = (dirs.Directions ?? new List<DirectionDto>(), dirs.Error);
+        try
+        {
+            var dirs = await DirectionService.GetDirectionsAsync();
+            _directions = dirs;
 
-        var projs = await ProjectService.GetProjectsAsync();
-        _projects = (projs.Projects ?? new List<ProjectDto?>(), projs.Error);
+            var projects = await ProjectService.GetProjectsAsync();
+            _projects = projects;
+        }
+        catch(Exception ex)
+        {
+            _serverErrorMessage = ex.Message;
+        }
     }
 
     private async Task LoadInterns()
