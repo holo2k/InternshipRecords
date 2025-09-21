@@ -402,7 +402,7 @@
     private async Task DeleteProject(ProjectViewModel project)
     {
         _errorMessage = null;
-        var (deletedId, error) = await ProjectService.DeleteProjectAsync(project.Project.Id);
+        var (deletedId, error) = await ProjectService.DeleteProjectAsync(project.Project!.Id);
 
         if (!string.IsNullOrEmpty(error))
         {

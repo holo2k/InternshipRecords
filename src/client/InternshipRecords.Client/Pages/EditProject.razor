@@ -71,7 +71,7 @@
     protected override async Task OnInitializedAsync()
     {
         _allInterns = await InternService.GetInternsAsync();
-        var project = (await ProjectService.GetProjectsAsync()).Projects.FirstOrDefault(d => d != null && d.Id == Id);
+        var project = (await ProjectService.GetProjectsAsync()).Projects.FirstOrDefault(d => d.Id == Id);
         _model.Id = Id;
         _model.Name = project?.Name ?? "";
         _model.Description = project?.Description ?? "";

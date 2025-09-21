@@ -1,6 +1,5 @@
 ﻿@page "/add-intern"
 @using System.Text.Json
-@using System.Text.Json.Nodes
 @using InternshipRecords.Client.Services
 @using InternshipRecords.Client.Services.Intern
 @using Shared.Models.Project
@@ -128,26 +127,21 @@
 </div>
 
 @code {
-    // модель запроса
     private readonly AddInternRequest _internRequest = new();
 
-    // сервисы теперь возвращают (Result, Error?) tuples
     private (List<DirectionDto> Result, string? Error) _directions = (new List<DirectionDto>(), null);
     private (List<ProjectDto> Result, string? Error) _projects = (new List<ProjectDto>(), null);
 
-    // временные для создания новых direction/project
     private string _newDirectionName = "";
     private string _newProjectName = "";
     private string _newDirectionDescription = "";
     private string _newProjectDescription = "";
 
-    // выбор в селектах
     private string _selectedDirectionSelection = "";
     private string _selectedProjectSelection = "";
     private bool _showNewDirectionInput;
     private bool _showNewProjectInput;
 
-    // серверная ошибка и field-errors
     private string? _serverErrorMessage;
     private Dictionary<string, string[]>? _serverFieldErrors;
 
@@ -173,14 +167,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // загружаем справочники; сервисы возвращают (result, error)
         try
         {
             _directions = await DirectionService.GetDirectionsAsync();
         }
         catch (Exception ex)
         {
-            // в случае исключения — безопасно показываем сообщение
             _directions = (new List<DirectionDto>(), $"Ошибка загрузки направлений: {ex.Message}");
         }
 
@@ -193,7 +185,6 @@
             _projects = (new List<ProjectDto>(), $"Ошибка загрузки проектов: {ex.Message}");
         }
 
-        // если есть какие-то ошибки при загрузке — покажем их
         if (!string.IsNullOrEmpty(_directions.Error))
             _serverErrorMessage = _directions.Error;
         else if (!string.IsNullOrEmpty(_projects.Error))
@@ -242,15 +233,12 @@
 
     private async Task<DirectionDto?> GetOrCreateDirectionAsync(string name)
     {
-        // пробуем найти в локальном списке
         var found = _directions.Result.FirstOrDefault(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
         if (found != null) return found;
 
-        // создаём через сервис
         var (created, error) = await DirectionService.AddDirectionAsync(new AddDirectionRequest { Name = name, Description = _newDirectionDescription });
         if (!string.IsNullOrEmpty(error))
         {
-            // пробрасываем ошибку наружу через поле
             _serverErrorMessage = $"Ошибка при создании направления: {error}";
             return null;
         }
@@ -261,7 +249,6 @@
             return null;
         }
 
-        // обновим локальный кэш
         _directions.Result.Add(created);
         return created;
     }
@@ -290,24 +277,21 @@
 
     private async Task HandleValidSubmit()
     {
-        // сброс предыдущих ошибок
         _serverErrorMessage = null;
         _serverFieldErrors = null;
 
         try
         {
-            // создать/получить новое направление при необходимости
             if (_showNewDirectionInput && !string.IsNullOrWhiteSpace(_newDirectionName))
             {
                 var dir = await GetOrCreateDirectionAsync(_newDirectionName.Trim());
-                if (dir == null) return; // ошибка уже установлена
+                if (dir == null) return;
                 _internRequest.DirectionId = dir.Id;
                 _selectedDirectionSelection = dir.Id.ToString();
                 _newDirectionName = "";
                 _newDirectionDescription = "";
             }
 
-            // создать/получить новый проект при необходимости
             if (_showNewProjectInput && !string.IsNullOrWhiteSpace(_newProjectName))
             {
                 var proj = await GetOrCreateProjectAsync(_newProjectName.Trim());
@@ -318,7 +302,6 @@
                 _newProjectDescription = "";
             }
 
-            // теперь собственно добавить стажёра
             try
             {
                 await InternService.AddInternAsync(_internRequest);
@@ -326,8 +309,6 @@
             }
             catch (InvalidOperationException invEx)
             {
-                // internService выбрасывает InvalidOperationException(serverMessage)
-                // попытаемся разобрать JSON и показать понятные ошибки
                 ProcessServerError(invEx.Message);
             }
             catch (Exception ex)
@@ -337,7 +318,6 @@
         }
         catch (Exception ex)
         {
-            // общий catch для unexpected
             _serverErrorMessage = $"Неожиданная ошибка: {ex.Message}";
         }
     }
@@ -350,7 +330,6 @@
             return;
         }
 
-        // пытаемся распарсить JSON вида { message: "...", errors: { "Field": ["err1","err2"] } }
         try
         {
             using var doc = JsonDocument.Parse(serverMessage);
@@ -362,7 +341,6 @@
             }
             else
             {
-                // если нет "message" — положим весь текст
                 _serverErrorMessage = serverMessage;
             }
 
@@ -392,7 +370,6 @@
         }
         catch
         {
-            // если не JSON — просто показываем строку
             _serverErrorMessage = serverMessage;
         }
     }

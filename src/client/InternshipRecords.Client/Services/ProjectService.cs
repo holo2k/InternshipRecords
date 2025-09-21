@@ -67,7 +67,7 @@ public class ProjectService
             }
 
             var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"]?.ToString());
+            return (null, error?["message"].ToString());
         }
         catch (Exception ex)
         {
@@ -89,7 +89,7 @@ public class ProjectService
             }
 
             var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"]?.ToString());
+            return (null, error?["message"].ToString());
         }
         catch (Exception ex)
         {
@@ -111,7 +111,7 @@ public class ProjectService
             }
 
             var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"]?.ToString());
+            return (null, error?["message"].ToString());
         }
         catch (Exception ex)
         {

@@ -46,7 +46,7 @@ public class DirectionService
             }
 
             var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (new List<DirectionDto>(), error?["message"]?.ToString());
+            return (new List<DirectionDto>(), error?["message"].ToString());
         }
         catch (Exception ex)
         {
@@ -68,7 +68,7 @@ public class DirectionService
             }
 
             var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"]?.ToString());
+            return (null, error?["message"].ToString());
         }
         catch (Exception ex)
         {
@@ -90,7 +90,7 @@ public class DirectionService
             }
 
             var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"]?.ToString());
+            return (null, error?["message"].ToString());
         }
         catch (Exception ex)
         {
@@ -112,7 +112,7 @@ public class DirectionService
             }
 
             var error = JsonSerializer.Deserialize<Dictionary<string, object>>(content, _options);
-            return (null, error?["message"]?.ToString());
+            return (null, error?["message"].ToString());
         }
         catch (Exception ex)
         {
