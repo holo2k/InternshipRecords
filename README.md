@@ -61,9 +61,28 @@ C:.
 
 * **Слои**: `Web` (контроллеры, SignalR), `Application` (CQRS: команды/запросы, обработчики), `Infrastructure` (EF Core, репозитории), `Domain` (сущности), `Client` (Blazor).
 * **CQRS + MediatR**: запросы/команды (например `AddInternCommand`, `GetInternsQuery`) и их обработчики разделяют ответственность.
-* **FluentValidation**: валидаторы команд (например `AddInternCommandValidator`) подключены в pipeline и бросают `ValidationException` при ошибках.
+* **FluentValidation**: валидаторы команд подключены в pipeline и бросают `ValidationException` при ошибках.
 * **PipelineBehavior** в Web проекции ловит и агрегирует ошибки валидации до вызова обработчика.
-* **ControllerExtensions.FromException** — единый формат ответа на ошибки
+* **MbResult** — универсальный контейнер для ответа:
+
+  ```csharp
+  public sealed class MbResult<T>
+  {
+      public T? Value { get; }
+      public MbError? Error { get; }
+      public bool IsSuccess => Error is null;
+  }
+  ```
+
+  * При успешном выполнении команда/запрос возвращает `MbResult<T>.Success(value)`.
+  * При ошибке возвращается `MbResult<T>.Failure(error)`, где `MbError` содержит:
+
+    * `Code` — код ошибки
+    * `Message` — текст ошибки
+    * `ValidationErrors` — ошибки валидации (если есть)
+
+  Для контроллеров есть расширение `ControllerExtensions.FromResult`, которое преобразует `MbResult` в корректный `IActionResult`.
+
 ---
 
 ## Запуск
