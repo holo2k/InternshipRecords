@@ -206,46 +206,73 @@
 
     private async Task LoadDataAsync()
     {
-        try
-        {
-            var directionsTask = DirectionService.GetDirectionsAsync(_sortBy == "count" ? new[] { "orderByCount" } : new[] { "orderByName" });
-            var projectsTask = ProjectService.GetProjectsAsync(_sortBy == "count" ? new[] { "orderByCount" } : new[] { "orderByName" });
-            var internsTask = InternService.GetInternsAsync();
+        string[] directionParams = _sortBy == "name" ? new[] { "orderByName" } : new[] { "orderByCount" };
+        string[] projectParams = _sortBy == "name" ? new[] { "orderByName" } : new[] { "orderByCount" };
 
-            await Task.WhenAll(directionsTask, projectsTask, internsTask);
+        var directionsTask = DirectionService.GetDirectionsAsync(directionParams);
+        var projectsTask = ProjectService.GetProjectsAsync(projectParams);
+        var internsTask = InternService.GetInternsAsync();
 
-            _allDirections = directionsTask.Result;
-            _allProjects = projectsTask.Result;
-            _allInterns = internsTask.Result;
+        await Task.WhenAll(directionsTask, projectsTask, internsTask);
 
-            var comparer = StringComparer.Create(new System.Globalization.CultureInfo("ru-RU"), true);
+        _allDirections = await directionsTask;
+        _allProjects = await projectsTask;
+        _allInterns = await internsTask;
 
-            _directionViewModels = _allDirections.Select(d => new DirectionViewModel
+        var comparer = StringComparer.Create(new System.Globalization.CultureInfo("ru-RU"), true);
+
+        _directionViewModels = _allDirections
+            .Select(d => new DirectionViewModel
             {
-                Direction = d,
-                Interns = _allInterns.Where(i => i.DirectionId == d.Id).ToList(),
-                InternCount = _allInterns.Count(i => i.DirectionId == d.Id)
+                Direction = d!,
+                InternCount = _allInterns.Count(i => i.DirectionId == d?.Id),
+                Interns = _allInterns.Where(i => i.DirectionId == d?.Id).ToList(),
+                ShowInterns = false
             })
-            .OrderByDescending(d => _sortBy == "count" ? d.InternCount : 0)
-            .ThenBy(d => d.Direction.Name, comparer)
+            .OrderBy(dvm => _sortBy == "count" ? -dvm.InternCount : 0)
+            .ThenBy(dvm => dvm.Direction.Name, comparer)
             .ToList();
 
-            _projectViewModels = _allProjects.Select(p => new ProjectViewModel
+        if (_sortBy == "count")
+        {
+            _directionViewModels = _directionViewModels
+                .OrderByDescending(d => d.InternCount)
+                .ThenBy(d => d.Direction.Name, comparer)
+                .ToList();
+        }
+        else
+        {
+            _directionViewModels = _directionViewModels
+                .OrderBy(d => d.Direction.Name, comparer)
+                .ToList();
+        }
+
+        _projectViewModels = _allProjects
+            .Select(p => new ProjectViewModel
             {
                 Project = p,
-                Interns = _allInterns.Where(i => i.ProjectId == p.Id).ToList(),
-                InternCount = _allInterns.Count(i => i.ProjectId == p.Id)
+                InternCount = _allInterns.Count(i => i.ProjectId == p?.Id),
+                Interns = _allInterns.Where(i => i.ProjectId == p?.Id).ToList(),
+                ShowInterns = false
             })
-            .OrderByDescending(p => _sortBy == "count" ? p.InternCount : 0)
-            .ThenBy(p => p.Project.Name, comparer)
             .ToList();
 
-            _currentPage = 1;
-        }
-        catch (Exception ex)
+        if (_sortBy == "count")
         {
-            _errorMessage = $"Ошибка при загрузке данных: {ex.Message}";
+            _projectViewModels = _projectViewModels
+                .OrderByDescending(p => p.InternCount)
+                .ThenBy(p => p.Project?.Name, comparer)
+                .ToList();
         }
+        else
+        {
+            _projectViewModels = _projectViewModels
+                .OrderBy(p => p.Project?.Name, comparer)
+                .ToList();
+        }
+
+        _currentPage = 1;
+        StateHasChanged();
     }
 
     private void SwitchTabDirections() { _activeTab = "directions"; _currentPage = 1; } 
@@ -276,8 +303,8 @@
     private void PrevPage() => _currentPage = Math.Max(1, _currentPage - 1);
     private void NextPage() { if (HasNextPage) _currentPage++; }
 
-    private void ToggleInterns(DirectionViewModel direction) => direction.ShowInterns = !direction.ShowInterns;
-    private void ToggleInterns(ProjectViewModel project) => project.ShowInterns = !project.ShowInterns;
+    private static void ToggleInterns(DirectionViewModel direction) => direction.ShowInterns = !direction.ShowInterns;
+    private static void ToggleInterns(ProjectViewModel project) => project.ShowInterns = !project.ShowInterns;
 
     private async Task AddDirection() => await AddEntityAsync(
         _newDirectionName,
@@ -371,7 +398,7 @@
 
     private void OnDirectionInternsChanged(ChangeEventArgs e) => _selectedDirectionInternIds = GetSelectedIds(e);
     private void OnProjectInternsChanged(ChangeEventArgs e) => _selectedProjectInternIds = GetSelectedIds(e);
-    private List<Guid> GetSelectedIds(ChangeEventArgs e) => ((IEnumerable<string>?)e.Value ?? Array.Empty<string>()).Select(Guid.Parse).ToList();
+    private static List<Guid> GetSelectedIds(ChangeEventArgs e) => ((IEnumerable<string>?)e.Value ?? Array.Empty<string>()).Select(Guid.Parse).ToList();
 
     private void EditDirection(DirectionViewModel direction) => NavigationManager.NavigateTo($"/edit-direction/{direction.Direction.Id}");
     private void EditProject(ProjectViewModel project) => NavigationManager.NavigateTo($"/edit-project/{project.Project.Id}");
@@ -380,17 +407,17 @@
 
     private class DirectionViewModel
     {
-        public DirectionDto Direction { get; set; } = new();
-        public List<InternDto> Interns { get; set; } = new();
-        public int InternCount { get; set; }
+        public DirectionDto Direction { get; init; } = new();
+        public List<InternDto> Interns { get; init; } = new();
+        public int InternCount { get; init; }
         public bool ShowInterns { get; set; }
     }
 
     private class ProjectViewModel
     {
-        public ProjectDto Project { get; set; } = new();
-        public List<InternDto> Interns { get; set; } = new();
-        public int InternCount { get; set; }
+        public ProjectDto Project { get; init; } = new();
+        public List<InternDto> Interns { get; init; } = new();
+        public int InternCount { get; init; }
         public bool ShowInterns { get; set; }
     }
 }
