@@ -1,6 +1,6 @@
 ﻿using InternshipRecords.Domain.Entities;
 
-namespace InternshipRecords.Infrastructure.Repository.Abstractions;
+namespace InternshipRecords.Domain.Repository.Abstractions;
 
 public interface IInternRepository
 {

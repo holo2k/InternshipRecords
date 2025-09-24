@@ -1,6 +1,6 @@
 ﻿using InternshipRecords.Domain.Entities;
 
-namespace InternshipRecords.Infrastructure.Repository.Abstractions;
+namespace InternshipRecords.Domain.Repository.Abstractions;
 
 public interface IProjectRepository
 {
@@ -9,6 +9,4 @@ public interface IProjectRepository
     Task<Guid> DeleteAsync(Guid id);
     Task<Project?> GetByIdAsync(Guid id);
     Task<ICollection<Project>> GetAllAsync(params string[] queryParams);
-    Task AttachInternsAsync(Guid projectId, Guid[] internIds);
-    Task SaveAsync();
 }

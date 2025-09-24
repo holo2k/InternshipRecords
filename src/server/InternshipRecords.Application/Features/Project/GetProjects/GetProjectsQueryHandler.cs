@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using InternshipRecords.Infrastructure.Repository.Abstractions;
+using InternshipRecords.Domain.Repository.Abstractions;
 using MediatR;
 using Shared.Models;
 using Shared.Models.Project;

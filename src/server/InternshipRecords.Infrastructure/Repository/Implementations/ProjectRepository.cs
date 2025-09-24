@@ -1,6 +1,6 @@
 ﻿using InternshipRecords.Domain.Entities;
+using InternshipRecords.Domain.Repository.Abstractions;
 using InternshipRecords.Infrastructure.Persistence;
-using InternshipRecords.Infrastructure.Repository.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace InternshipRecords.Infrastructure.Repository.Implementations;

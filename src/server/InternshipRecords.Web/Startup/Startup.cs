@@ -4,7 +4,9 @@ using FluentValidation;
 using InternshipRecords.Application.AutoMapper;
 using InternshipRecords.Application.Features.Intern.AddIntern;
 using InternshipRecords.Application.Features.Intern.GetInterns;
+using InternshipRecords.Application.Interfaces;
 using InternshipRecords.Infrastructure;
+using InternshipRecords.Infrastructure.Persistence;
 using InternshipRecords.Web.Hub;
 using InternshipRecords.Web.PipelineBehaviors;
 using MediatR;
@@ -37,6 +39,7 @@ public static class Startup
 
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetInternsQueryHandler).Assembly));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         ValidatorOptions.Global.DefaultClassLevelCascadeMode = CascadeMode.Stop;
         ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;

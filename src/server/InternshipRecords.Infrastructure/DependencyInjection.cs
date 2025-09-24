@@ -1,5 +1,5 @@
-﻿using InternshipRecords.Infrastructure.Persistence;
-using InternshipRecords.Infrastructure.Repository.Abstractions;
+﻿using InternshipRecords.Domain.Repository.Abstractions;
+using InternshipRecords.Infrastructure.Persistence;
 using InternshipRecords.Infrastructure.Repository.Implementations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

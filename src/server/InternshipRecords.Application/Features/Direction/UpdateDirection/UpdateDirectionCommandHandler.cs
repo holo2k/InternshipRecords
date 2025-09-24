@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using InternshipRecords.Infrastructure.Persistence;
-using InternshipRecords.Infrastructure.Repository.Abstractions;
+using InternshipRecords.Application.Interfaces;
+using InternshipRecords.Domain.Repository.Abstractions;
 using MediatR;
 using Shared.Models;
 using Shared.Models.Direction;
@@ -9,16 +9,16 @@ namespace InternshipRecords.Application.Features.Direction.UpdateDirection;
 
 public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionCommand, MbResult<DirectionDto>>
 {
-    private readonly AppDbContext _db;
     private readonly IDirectionRepository _directionRepository;
     private readonly IInternRepository _internRepository;
     private readonly IMapper _mapper;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateDirectionCommandHandler(IDirectionRepository directionRepository, AppDbContext db, IMapper mapper,
+    public UpdateDirectionCommandHandler(IDirectionRepository directionRepository, IUnitOfWork uow, IMapper mapper,
         IInternRepository internRepository)
     {
         _directionRepository = directionRepository;
-        _db = db;
+        _uow = uow;
         _mapper = mapper;
         _internRepository = internRepository;
     }
@@ -26,7 +26,7 @@ public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionComm
     public async Task<MbResult<DirectionDto>> Handle(UpdateDirectionCommand request,
         CancellationToken cancellationToken)
     {
-        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+        await _uow.BeginTransactionAsync(cancellationToken);
         try
         {
             var direction = await _directionRepository.GetByIdAsync(request.Direction.Id);
@@ -45,14 +45,14 @@ public class UpdateDirectionCommandHandler : IRequestHandler<UpdateDirectionComm
             var toRemove = previously.Where(i => !request.Direction.InternIds!.Contains(i.Id)).ToList();
             foreach (var intern in toRemove) intern.DirectionId = null;
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
+            await _uow.CommitAsync(cancellationToken);
 
             return MbResult<DirectionDto>.Success(_mapper.Map<DirectionDto>(direction));
         }
         catch (Exception ex)
         {
-            await tx.RollbackAsync(cancellationToken);
+            await _uow.RollbackAsync(cancellationToken);
 
             return ex switch
             {

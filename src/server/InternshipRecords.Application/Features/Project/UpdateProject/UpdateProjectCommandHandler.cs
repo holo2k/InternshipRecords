@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using InternshipRecords.Infrastructure.Persistence;
-using InternshipRecords.Infrastructure.Repository.Abstractions;
+using InternshipRecords.Application.Interfaces;
+using InternshipRecords.Domain.Repository.Abstractions;
 using MediatR;
 using Shared.Models;
 using Shared.Models.Project;
@@ -9,23 +9,23 @@ namespace InternshipRecords.Application.Features.Project.UpdateProject;
 
 public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand, MbResult<ProjectDto>>
 {
-    private readonly AppDbContext _db;
     private readonly IInternRepository _internRepository;
     private readonly IMapper _mapper;
     private readonly IProjectRepository _projectRepository;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateProjectCommandHandler(IProjectRepository projectRepository, AppDbContext db,
+    public UpdateProjectCommandHandler(IProjectRepository projectRepository, IUnitOfWork uow,
         IInternRepository internRepository, IMapper mapper)
     {
         _projectRepository = projectRepository;
-        _db = db;
+        _uow = uow;
         _internRepository = internRepository;
         _mapper = mapper;
     }
 
     public async Task<MbResult<ProjectDto>> Handle(UpdateProjectCommand request, CancellationToken cancellationToken)
     {
-        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+        await _uow.BeginTransactionAsync(cancellationToken);
         try
         {
             var project = await _projectRepository.GetByIdAsync(request.Project.Id);
@@ -42,14 +42,14 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             var toRemove = previously.Where(i => !request.Project.InternIds!.Contains(i.Id)).ToList();
             foreach (var intern in toRemove) intern.ProjectId = null;
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
+            await _uow.CommitAsync(cancellationToken);
 
             return MbResult<ProjectDto>.Success(_mapper.Map<ProjectDto>(project));
         }
         catch (Exception ex)
         {
-            await tx.RollbackAsync(cancellationToken);
+            await _uow.RollbackAsync(cancellationToken);
 
             return ex switch
             {

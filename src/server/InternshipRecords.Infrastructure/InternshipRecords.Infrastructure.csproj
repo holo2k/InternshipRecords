@@ -17,8 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\client\InternshipRecords.Client\InternshipRecords.Client.csproj" />
-    <ProjectReference Include="..\InternshipRecords.Domain\InternshipRecords.Domain.csproj" />
+    <ProjectReference Include="..\InternshipRecords.Application\InternshipRecords.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
